@@ -1,26 +1,8 @@
 # KNN-Sentiment: TP2 de Métodos Numéricos
 
+## DEADLINE  Jueves 10 / 10
+
 ## Instrucciones
-
-
-### Clonar Repo
-
-NO HACER FORK! 
-
-Primero, crearse un repo en algún otro lugar. Luego, clonar este repo de la siguiente manera:
-
-```
-git clone git@github.com:finiteautomata/metnum-tp2-20192c.git
-```
-
-Cambiar el repositorio al que hayamos creado
-
-```
-git remote remove origin
-git remote add origin <nuestra-nueva-url-de-git>
-```
-
-Listo. Ya pueden disfrutar del TP2
 
 ### Datos
 
