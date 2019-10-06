@@ -1,6 +1,7 @@
 #include <algorithm>
 //#include <chrono>
 #include <iostream>
+#include <queue>
 #include "knn.h"
 
 using namespace std;
@@ -34,7 +35,7 @@ double KNNClassifier::predictVector(const Vector &testVector) const{
 
     auto testTranspose = testVector.transpose();
     //get norms of each vector in X minus testVector
-    vector<pair<double, int>> norms();
+    vector<pair<double, int>> norms;
     norms.reserve(_X.rows());
 
     for(unsigned int i = 0; i < _X.rows(); ++i) {
