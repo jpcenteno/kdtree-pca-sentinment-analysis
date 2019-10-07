@@ -198,7 +198,7 @@ if __name__ == "__main__":
     vectorizer.fit(text_train)
     # ENDCHORIPASTEO
 
-    if not args.use_pca and args.implementation=='sklearn':
+    if True: #not args.use_pca and args.implementation=='sklearn':
         X_train, y_train = vectorizer.transform(text_train), (label_train == 'pos').values
         X_test, y_test = vectorizer.transform(text_test), (label_test == 'pos').values
     else:

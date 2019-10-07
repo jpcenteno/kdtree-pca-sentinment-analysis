@@ -6,15 +6,15 @@ public:
     PCA(unsigned int n_components);
 
     // TODO: pasar a SparseMatrix - Este Seguro que es el problema
-    void fit(Matrix X);
+    void fit(SparseMatrix X);
 
     Eigen::MatrixXd transform(SparseMatrix X);
 
-    Eigen::MatrixXd fit_transform(Matrix X);
+    Eigen::MatrixXd fit_transform(SparseMatrix X);
 private:
-    Matrix getMedias(const Matrix&) const;
-    Matrix get_M_Minus_Medias(const Matrix&, const Matrix&) const;
-    Matrix getCovariance(const Matrix &)const;
+    Matrix getMedias(const SparseMatrix&) const;
+    Matrix get_M_Minus_Medias(const SparseMatrix&, const Matrix&) const;
+    Matrix getCovariance(const SparseMatrix &)const;
 
     unsigned int _nComponents;
     std::pair<Vector, Matrix> _eigenvalues_vectors;

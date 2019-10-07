@@ -12,7 +12,7 @@ public:
     Vector predict(SparseMatrix X);
 private:
     double predictVector(const Vector &) const;
-    
+
     SparseMatrix _X;
     Matrix _y;
     unsigned int _neighbors;
