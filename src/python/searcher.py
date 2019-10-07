@@ -132,8 +132,13 @@ class KNNHyperParameters(SearchProblem):
         return acc / (self.time_penalization * time) # acá tengo problemas con empates, pero fue
 
     def generate_random_state(self):
-        "this method receives nothing, and must return a randomly generated state."
-        return random.randrange(1, int(self.X_train.shape[0] / 10))
+        """this method receives nothing, and must return a randomly generated state.
+
+        Devuelvo un valor entre las dos dimesiones de X_train dividido
+        por 10. Muestras de entrenamiento / 10 => max vecinos,
+        vocabulario / 10 => max alfa"""
+
+        return (random.randrange(1, int(self.X_train.shape[0] / 10)), random.randrange(1, int(self.X_train.shape[1] / 10)))
 
     def log(self, msg):
         if self.print_log:
