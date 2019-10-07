@@ -12,9 +12,13 @@ pair<double, Vector> power_iteration(const Matrix& X, unsigned num_iter, double 
     double eigenvalue;
     for (unsigned i = 0; i < num_iter; ++i)
     {
+        // cout << X << endl;
+        // cout << "X: " << X.norm() << endl;
         const Vector& tmp = X*b;
+        cout << "tmp: " << tmp.norm() << endl;
         const Vector& next_b = tmp / tmp.norm();
-        double delta = (next_b - b).squaredNorm();
+        cout << "next_b: " << next_b.norm() << endl;
+        double delta = (next_b - b).norm();
         cout << "delta: " << delta << endl;
         if (delta < eps) {
             std::cout << "corta PM por diferencia" << '\n';

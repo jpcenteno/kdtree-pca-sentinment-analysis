@@ -13,6 +13,8 @@ PCA::PCA(unsigned int n_components) : _nComponents(n_components)
 void PCA::fit(Matrix X)
 {
     _covMatrix = getCovariance(X);
+    cout << _covMatrix << endl;
+    exit(-1);
     _eigenvalues_vectors = get_first_eigenvalues(_covMatrix, _nComponents);
 }
 
@@ -58,7 +60,7 @@ Matrix PCA::get_M_Minus_Medias(const Matrix &M, const Matrix &medias) const {
 
 
 Matrix PCA::getCovariance(const Matrix &M)const {
-  Matrix medias = getMedias(M);
-  Matrix M_minus_medias = get_M_Minus_Medias(M, medias);
-  return (M_minus_medias.transpose()*M_minus_medias)/(M.rows()-1);
+    Matrix medias = getMedias(M);
+    Matrix M_minus_medias = get_M_Minus_Medias(M, medias);
+    return (M_minus_medias.transpose()*M_minus_medias)/(M.rows()-1);
 }
