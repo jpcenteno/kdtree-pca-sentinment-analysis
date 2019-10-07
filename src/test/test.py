@@ -12,6 +12,10 @@ import pandas as pd
 import numpy as np
 import math
 import traceback
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics import accuracy_score
+from sklearn import datasets
+from sklearn.datasets import fetch_openml
 
 # PCA, KNNClassifier, power_iteration, get_first_eigenvalues
 import sentiment as st
@@ -53,6 +57,7 @@ Power Method
 
 @mntest
 def testear_pm_diagonal_3x3():
+
     A = np.diag([1.,2.,3.])
     A_reversed = np.diag([1.,2.,3.][::-1])
 
@@ -162,4 +167,34 @@ def testear_deflacion_diagonalizable_6x6():
     for i in range(6):
         assert(np.allclose(A@b[:,i], c[i]*b[:,i]))
 
-correr_tests()
+@mntest
+def testear_pca_knn():
+
+    X_all, y_all = fetch_openml('mnist_784', version=1, return_X_y=True)
+
+    y_all = y_all.astype(int)
+
+    limit = 30
+    X = X_all[:limit]
+    y = y_all[:limit]
+
+    #Comentar esto si nuestra mejor configuración no usa PCA
+    alpha = 1
+    pca = st.PCA(alpha)
+
+    #pca.fit(X)
+    #X = pca.transform(X)
+
+    clf = st.KNNClassifier(1)
+    clf.fit(X, y)
+
+    y_pred = clf.predict(X).reshape(-1)
+
+    acc = accuracy_score(y, y_pred)
+
+    print("Accuracy: {}".format(acc))
+    assert(acc > 0.99999)
+    return
+
+if __name__ == '__main__':
+    correr_tests()
