@@ -52,4 +52,4 @@ pair<Vector, Matrix> donde:
       correspondientes
 */
 std::pair<Eigen::VectorXd, Matrix>
-    get_first_eigenvalues(const Matrix& mat, unsigned num, unsigned num_iter=5000, double epsilon=1e-16);
+    get_first_eigenvalues(const Matrix& mat, unsigned num, unsigned num_iter=5000, double epsilon=1e-4);

@@ -14,7 +14,9 @@ pair<double, Vector> power_iteration(const Matrix& X, unsigned num_iter, double 
     {
         const Vector& tmp = X*b;
         const Vector& next_b = tmp / tmp.norm();
-        if ((next_b-b).squaredNorm() < eps) {
+        double delta = (next_b - b).squaredNorm();
+        cout << "delta: " << delta << endl;
+        if (delta < eps) {
             std::cout << "corta PM por diferencia" << '\n';
             b = next_b;
             break;
