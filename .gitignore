@@ -136,3 +136,7 @@ cmake-build-release
 # Otros
 data/*
 doc/*
+
+ASM
+dataset.pdf
+wget-log
