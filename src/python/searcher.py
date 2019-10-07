@@ -130,7 +130,22 @@ class KNNHyperParameters(SearchProblem):
             print(msg)
 
 if __name__ == "__main__":
-    print("main!, probando con imbd_small...")
+    import argparse
+    parser = argparse.ArgumentParser(description='Hacer alguna busqueda local sobre los hiperparámetros de KNN.')
+    parser.add_argument('implementacion', choices=["sentiment", "sklearn"]
+                        ,help='usar "sentiment" nuestra implementación de KNN y PCA o la de la biblioteca "sklearn"')
+    parser.add_argument('-n', type=int, default=None
+                        ,help='La cantidad inicial de vecinos a considerar - por defecto usa el de la clase')
+    parser.add_argument('--alfa', type=int, default=None
+                        ,help='La cantidad de componentes principales incial a considerar - por defecto usa el de la clase')
+    parser.add_argument('--print-log', type=bool, default=None
+                        ,help='Si imprime los logs a medida de que avanza - por defecto usa el de la clase')
+    parser.add_argument('--n-step', type=int, default=None
+                        ,help='El tamaño del paso al moverse por el vecindario en la dimensión de vecinos - por defecto usa el de la clase')
+    parser.add_argument('--alfa-step', type=int, default=None
+                        ,help='El tamaño del paso al moverse por el vecindario en la dimensión de las componentes principales - por defecto usa el de la clase')
+
+    args = parser.parse_args()
 
     # BEGIN CHORIPASTEO
     import pandas as pd
@@ -162,7 +177,10 @@ if __name__ == "__main__":
     # ENDCHORIPASTEO
 
     print("Creando Problema")
-    knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test, classifier_from="sentiment", pca_from="sentiment")
+    knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test
+                                     ,classifier_from=args.implementacion, pca_from=args.implementacion
+                                     ,neightbours_step=args.n_step, initial_neightbours=args.n, initial_pca=args.alfa
+                                     ,print_log=args.print_log)
 
     from simpleai.search.viewers import BaseViewer
     visor = BaseViewer()
