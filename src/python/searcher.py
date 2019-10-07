@@ -154,6 +154,8 @@ if __name__ == "__main__":
                         ,help='El tamaño del paso al moverse por el vecindario en la dimensión de vecinos - por defecto usa el de la clase')
     parser.add_argument('--usar-pca', type=bool, default=usar_pca_default,
                         help='Indica si usar o no PCA, si no usa utiliza matrices esparsas')
+    parser.add_argument('--data-set', type=str, default="../../data/imdb_small.csv"
+                        ,help='path del dataset, puede ser relativo descomprimido - por defecto usa ../../data/imdb_small.csv')
     #parser.add_argument('--alfa-step', type=int, default=None
     #                    ,help='El tamaño del paso al moverse por el vecindario en la dimensión de las componentes principales - por defecto usa el de la clase')
 
@@ -165,7 +167,7 @@ if __name__ == "__main__":
     #!cd ../../data && tar -xvf *.tgz
     #!cd ../../data && tar -xvf *.tar.gz
 
-    df = pd.read_csv("../../data/imdb_small.csv", index_col=0)
+    df = pd.read_csv(args.data_set, index_col=0)
 
     print("Cantidad de documentos: {}".format(df.shape[0]))
 
