@@ -69,6 +69,7 @@ class KNNHyperParameters(SearchProblem):
         self.max_time = max_time
         self.time_penalization = time_penalization
 
+        self.usar_pca = usar_pca
         self.print_log = print_log
 
     def actions(self, state):
@@ -95,12 +96,16 @@ class KNNHyperParameters(SearchProblem):
         k, alfa = state
 
         beg = process_time()
-        self.log("Transformando datos (PCA)")
-        time_log = process_time()
-        pca = self.pca_klass_constructor(alfa)
-        x_train = pca.fit_transform(self.X_train)
-        x_test = pca.fit_transform(self.X_test)
-        self.log("listo - elapsed {} segundos".format(process_time() - time_log))
+        if self.usar_pca:
+            self.log("Transformando datos (PCA)")
+            time_log = process_time()
+            pca = self.pca_klass_constructor(alfa)
+            x_train = pca.fit_transform(self.X_train)
+            x_test = pca.fit_transform(self.X_test)
+            self.log("listo - elapsed {} segundos en PCA".format(process_time() - time_log))
+        else:
+            x_train = self.X_train
+            x_test = self.X_test
 
         self.log("Fitteando y Prediciendo")
         time_log = process_time()
@@ -108,7 +113,8 @@ class KNNHyperParameters(SearchProblem):
         clf.fit(x_train, self.Y_train)
         y_pred = clf.predict(x_test)
         end = process_time()
-        self.log("listo - elapsed {} segundos".format(end - process_time()))
+        self.log("listo - elapsed {} segundos en KNN".format(end - time_log))
+        self.log("tiempo total: {}".format(end - beg))
 
         acc = accuracy_score(self.Y_test, y_pred)
         time = (end - beg) / 60.0
@@ -138,16 +144,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Hacer alguna busqueda local sobre los hiperparámetros de KNN.')
     parser.add_argument('implementacion', choices=["sentiment", "sklearn"]
                         ,help='usar "sentiment" nuestra implementación de KNN y PCA o la de la biblioteca "sklearn"')
-    parser.add_argument('-n', type=int, default=None
+    parser.add_argument('-n', type=int, default=initial_neightbours_default
                         ,help='La cantidad inicial de vecinos a considerar - por defecto usa el de la clase')
     parser.add_argument('--alfa', type=int, default=None
                         ,help='La cantidad de componentes principales incial a considerar - por defecto usa el de la clase')
-    parser.add_argument('--print-log', type=bool, default=None
+    parser.add_argument('--print-log', type=bool, default=print_log_default
                         ,help='Si imprime los logs a medida de que avanza - por defecto usa el de la clase')
-    parser.add_argument('--n-step', type=int, default=None
+    parser.add_argument('--n-step', type=int, default=neightbours_step_default
                         ,help='El tamaño del paso al moverse por el vecindario en la dimensión de vecinos - por defecto usa el de la clase')
-    parser.add_argument('--alfa-step', type=int, default=None
-                        ,help='El tamaño del paso al moverse por el vecindario en la dimensión de las componentes principales - por defecto usa el de la clase')
+    parser.add_argument('--usar-pca', type=bool, default=usar_pca_default,
+                        help='Indica si usar o no PCA, si no usa utiliza matrices esparsas')
+    #parser.add_argument('--alfa-step', type=int, default=None
+    #                    ,help='El tamaño del paso al moverse por el vecindario en la dimensión de las componentes principales - por defecto usa el de la clase')
 
     args = parser.parse_args()
 
@@ -175,16 +183,20 @@ if __name__ == "__main__":
     vectorizer = CountVectorizer(max_df=0.90, min_df=0.01, max_features=5000)
 
     vectorizer.fit(text_train)
-
-    X_train, y_train = vectorizer.transform(text_train).todense(), (label_train == 'pos').values
-    X_test, y_test = vectorizer.transform(text_test).todense(), (label_test == 'pos').values
     # ENDCHORIPASTEO
+
+    if not args.usar_pca and args.implementacion=='sklearn':
+        X_train, y_train = vectorizer.transform(text_train), (label_train == 'pos').values
+        X_test, y_test = vectorizer.transform(text_test), (label_test == 'pos').values
+    else:
+        X_train, y_train = vectorizer.transform(text_train).todense(), (label_train == 'pos').values
+        X_test, y_test = vectorizer.transform(text_test).todense(), (label_test == 'pos').values
 
     print("Creando Problema")
     knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test
                                      ,classifier_from=args.implementacion, pca_from=args.implementacion
                                      ,neightbours_step=args.n_step, initial_neightbours=args.n, initial_pca=args.alfa
-                                     ,print_log=args.print_log)
+                                     ,usar_pca=args.usar_pca, print_log=args.print_log)
 
     from simpleai.search.viewers import BaseViewer
     visor = BaseViewer()
