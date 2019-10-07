@@ -15,7 +15,7 @@ pair<double, Vector> power_iteration(const Matrix& X, unsigned num_iter, double 
         const Vector& tmp = X*b;
         const Vector& next_b = tmp / tmp.norm();
         if ((next_b-b).squaredNorm() < eps) {
-            std::cout << "corta PM por diferencia" << '\n';
+            std::cout << "corta PM por diferencia entre autovectores en iteración: " << i+1 << "/" << num_iter << '\n';
             b = next_b;
             break;
         }
@@ -35,7 +35,7 @@ pair<Vector, Matrix> get_first_eigenvalues(const Matrix& X, unsigned num, unsign
     Matrix eigvectors(A.rows(), num);
 
     for(unsigned i = 0; i < num; ++i){
-        std::cout << "i / num: " << i << " / " << num << '\n';
+        std::cout << "i / num: " << i+1 << " / " << num << '\n';
         auto eigvalue_vector = power_iteration(A, num_iter, epsilon);
         eigvalues(i) = eigvalue_vector.first;
         eigvectors.col(i) = eigvalue_vector.second;

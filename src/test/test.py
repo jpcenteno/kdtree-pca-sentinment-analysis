@@ -166,26 +166,33 @@ def testear_deflacion_diagonalizable_6x6():
     # es autovector y autovalor
     for i in range(6):
         assert(np.allclose(A@b[:,i], c[i]*b[:,i]))
-
+"""
+KNN PCA
+"""
 @mntest
 def testear_pca_knn():
+    # si da accuracy 100 al ser testeada con su training set entonces hace lo que se pide al entrenarse y testear
 
-    X_all, y_all = fetch_openml('mnist_784', version=1, return_X_y=True)
+    X = [
+        [1, 0],
+        [0, 1],
+        [3, 0],
+        [5, 2],
+        [2, 1],
+        [2, 10],
+        [20, 10],
+        [25, 10],
+    ]
+    y = [i%2 for i in range(len(X))]
 
-    y_all = y_all.astype(int)
-
-    limit = 30
-    X = X_all[:limit]
-    y = y_all[:limit]
-
-    #Comentar esto si nuestra mejor configuración no usa PCA
-    alpha = 1
+    alpha = 5
     pca = st.PCA(alpha)
 
-    #pca.fit(X)
-    #X = pca.transform(X)
+    pca.fit(X)
+    X_trans = pca.transform(X)
 
     clf = st.KNNClassifier(1)
+    X = X_trans
     clf.fit(X, y)
 
     y_pred = clf.predict(X).reshape(-1)
@@ -198,3 +205,4 @@ def testear_pca_knn():
 
 if __name__ == '__main__':
     correr_tests()
+    #mismo_test()
