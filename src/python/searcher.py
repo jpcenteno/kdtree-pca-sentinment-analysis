@@ -17,13 +17,17 @@ import sentiment
 
 import random
 
+initial_neightbours_default=100
+neightbours_step_default=10
+print_log_default=True
+usar_pca_default=True
 class KNNHyperParameters(SearchProblem):
 
     def __init__(self, X_train, Y_train, X_test, Y_test
                  ,classifier_from="sentiment", pca_from="sentiment"
                  ,min_time=5, max_time=15, time_penalization=1.2
-                 ,neightbours_step = 10, initial_neightbours=100, initial_pca = None
-                 ,print_log=True):
+                 ,neightbours_step = neightbours_step_default, initial_neightbours=initial_neightbours_default
+                 ,usar_pca=usar_pca_default, initial_pca = None, print_log=print_log_default):
 
         """Recibe conjuntos de entreamiento y testeo y dos strings
         classifier_from y pca_from, que pueden ser sentiment si se usa
