@@ -142,21 +142,27 @@ class KNNHyperParameters(SearchProblem):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Hacer alguna busqueda local sobre los hiperparámetros de KNN.')
-    parser.add_argument('implementacion', choices=["sentiment", "sklearn"]
+    parser.add_argument('implementation', choices=["sentiment", "sklearn"]
                         ,help='usar "sentiment" nuestra implementación de KNN y PCA o la de la biblioteca "sklearn"')
     parser.add_argument('-n', type=int, default=initial_neightbours_default
                         ,help='La cantidad inicial de vecinos a considerar - por defecto usa el de la clase')
-    parser.add_argument('--alfa', type=int, default=None
+    parser.add_argument('--alpha', type=int, default=None
                         ,help='La cantidad de componentes principales incial a considerar - por defecto usa el de la clase')
     parser.add_argument('--print-log', type=bool, default=print_log_default
                         ,help='Si imprime los logs a medida de que avanza - por defecto usa el de la clase')
     parser.add_argument('--n-step', type=int, default=neightbours_step_default
                         ,help='El tamaño del paso al moverse por el vecindario en la dimensión de vecinos - por defecto usa el de la clase')
-    parser.add_argument('--usar-pca', type=bool, default=usar_pca_default,
+    parser.add_argument('--use-pca', type=bool, default=usar_pca_default,
                         help='Indica si usar o no PCA, si no usa utiliza matrices esparsas')
     parser.add_argument('--data-set', type=str, default="../../data/imdb_small.csv"
                         ,help='path del dataset, puede ser relativo descomprimido - por defecto usa ../../data/imdb_small.csv')
-    #parser.add_argument('--alfa-step', type=int, default=None
+    parser.add_argument('--algorithm', choices=["hill_climbing", "beam"], default="hill_climbing"
+                        ,help='El algoritmo a usar para la búsqueda')
+    parser.add_argument('--beam-size', type=int, default=100
+                        ,help='Si se usa beamer, la cantidad de estados iniciales que se considera - por defecto 100')
+    parser.add_argument('--iterations_limit', type=int, default=None
+                        ,help="Si se pasa, acota la cantidad de iteraciones - por defecto sigue hasta que no puede mejorar")
+    #parser.add_argument('--alpha-step', type=int, default=None
     #                    ,help='El tamaño del paso al moverse por el vecindario en la dimensión de las componentes principales - por defecto usa el de la clase')
 
     args = parser.parse_args()
@@ -187,7 +193,7 @@ if __name__ == "__main__":
     vectorizer.fit(text_train)
     # ENDCHORIPASTEO
 
-    if not args.usar_pca and args.implementacion=='sklearn':
+    if not args.use_pca and args.implementation=='sklearn':
         X_train, y_train = vectorizer.transform(text_train), (label_train == 'pos').values
         X_test, y_test = vectorizer.transform(text_test), (label_test == 'pos').values
     else:
@@ -196,22 +202,20 @@ if __name__ == "__main__":
 
     print("Creando Problema")
     knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test
-                                     ,classifier_from=args.implementacion, pca_from=args.implementacion
-                                     ,neightbours_step=args.n_step, initial_neightbours=args.n, initial_pca=args.alfa
-                                     ,usar_pca=args.usar_pca, print_log=args.print_log)
+                                     ,classifier_from=args.implementation, pca_from=args.implementation
+                                     ,neightbours_step=args.n_step, initial_neightbours=args.n, initial_pca=args.alpha
+                                     ,usar_pca=args.use_pca, print_log=args.print_log)
 
     from simpleai.search.viewers import BaseViewer
     visor = BaseViewer()
 
-    print("Resolviendo con Hill Climbing")
-    from simpleai.search.local import hill_climbing
-    result = hill_climbing(knn_problem, viewer=visor)
-    print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
-
-#    print("Resolviendo con Beam")
-#    from simpleai.search.local import beam
-#    result = beam(knn_problem, viewer=visor, beam_size=4, iterations_limit=40)
-#    print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
-
-    #print(visor.events)
-    #print(visor.stats)
+    if args.algorithm == "hill_climbing":
+        print("Resolviendo con Hill Climbing")
+        from simpleai.search.local import hill_climbing
+        result = hill_climbing(knn_problem, viewer=visor, iterations_limit=args.iterations_limit)
+        print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
+    if args.algorithm == "beam":
+        print("Resolviendo con Beam")
+        from simpleai.search.local import beam
+        result = beam(knn_problem, viewer=visor, beam_size=args.beam_size, iterations_limit=args.iterations_limit)
+        print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
