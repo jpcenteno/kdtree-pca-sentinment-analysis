@@ -47,14 +47,14 @@ class KNNHyperParameters(SearchProblem):
         super().__init__((initial_neightbours, initial_pca))
 
         if classifier_from == "sklearn":
-            self.classifier_klass = KNeighborsClassifier
+            self.classifier_klass_constructor = KNeighborsClassifier
         else:
-            self.classifier_klass = sentiment.KNNClassifier
+            self.classifier_klass_constructor = sentiment.KNNClassifier
 
         if pca_from == "sklearn":
-            self.pca_klass = PCA
+            self.pca_klass_constructor = lambda a: PCA(n_components=a)
         else:
-            self.pca_klass = sentiment.PCA
+            self.pca_klass_constructor = lambda a: sentiment.PCA(a)
 
         self.X_train = X_train
         self.Y_train = Y_train
@@ -93,14 +93,14 @@ class KNNHyperParameters(SearchProblem):
         beg = process_time()
         self.log("Transformando datos (PCA)")
         time_log = process_time()
-        pca = self.pca_klass(n_components=alfa)
+        pca = self.pca_klass_constructor(alfa)
         x_train = pca.fit_transform(self.X_train)
         x_test = pca.fit_transform(self.X_test)
         self.log("listo - elapsed {} segundos".format(process_time() - time_log))
 
         self.log("Fitteando y Prediciendo")
         time_log = process_time()
-        clf = self.classifier_klass(k)
+        clf = self.classifier_klass_constructor(k)
         clf.fit(x_train, self.Y_train)
         y_pred = clf.predict(x_test)
         end = process_time()
@@ -162,8 +162,7 @@ if __name__ == "__main__":
     # ENDCHORIPASTEO
 
     print("Creando Problema")
-    from sklearn.neighbors import KNeighborsClassifier
-    knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test, classifier_from="sklearn", pca_from="sklearn")
+    knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test, classifier_from="sentiment", pca_from="sentiment")
 
     from simpleai.search.viewers import BaseViewer
     visor = BaseViewer()

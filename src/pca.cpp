@@ -16,10 +16,15 @@ void PCA::fit(Matrix X)
     _eigenvalues_vectors = get_first_eigenvalues(_covMatrix, _nComponents);
 }
 
-
 MatrixXd PCA::transform(SparseMatrix X)
 {
     return X * _eigenvalues_vectors.second;
+}
+
+MatrixXd PCA::fit_transform(Matrix X)
+{
+    fit(X);
+    return transform(X.sparseView());
 }
 
 Matrix PCA::getMedias(const Matrix &M) const {
