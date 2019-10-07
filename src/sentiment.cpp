@@ -31,7 +31,7 @@ PYBIND11_MODULE(sentiment, m) {
         py::arg("X"),
         py::arg("num"),
         py::arg("num_iter")=5000,
-        py::arg("epsilon")=1e-16
+        py::arg("epsilon")=1e-4 // estaba en 1e-16
     );
 
 }
