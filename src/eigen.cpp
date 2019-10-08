@@ -6,26 +6,41 @@
 using namespace std;
 
 
-pair<double, Vector> power_iteration(const Matrix& X, unsigned num_iter, double eps)
+pair<double, Vector> power_iteration(const Matrix& A, unsigned num_iter, double eps)
 {
-    Vector b = Vector::Random(X.cols());
-    double eigenvalue;
+    Vector v = Vector::Random(A.cols());
+    double lambda = 0;
+    Vector Av = A*v;
+
+    double prev_lambda = 0;
+    Vector prev_v = Vector(A.cols());
+    Vector residual = Vector(A.cols());
     for (unsigned i = 0; i < num_iter; ++i)
     {
-        const Vector& tmp = X*b;
-        const Vector& next_b = tmp / tmp.norm();
-        if ((next_b-b).squaredNorm() < eps) {
-            std::cout << "corta PM por diferencia entre autovectores en iteración: " << i+1 << "/" << num_iter << '\n';
-            b = next_b;
+        prev_v = v;
+        v = Av/Av.norm();
+        Av = A*v;
+
+        prev_lambda = lambda;
+        lambda = (v.transpose()*Av);
+        lambda /= v.norm();
+
+        if ((prev_v-v).norm() < eps) {
+            std::cout << "[c1] corta PM por diferencia entre autovectores en iteración: " << i+1 << "/" << num_iter << '\n';
             break;
         }
-        b = next_b;
+        if (std::abs(prev_lambda-lambda) < eps) {
+            std::cout << "[c2] corta PM por diferencia entre autovalores en iteración: " << i+1 << "/" << num_iter << '\n';
+            break;
+        }
+        residual = Av - lambda*v;
+        if ((residual).norm() < eps) {
+            std::cout << "[c3] corta PM por diferencia residual en iteración: " << i+1 << "/" << num_iter << '\n';
+            break;
+        }
     }
 
-    eigenvalue = (b.transpose()*X*b);
-    eigenvalue /= b.squaredNorm();
-
-    return make_pair(eigenvalue, b / b.norm());
+    return make_pair(lambda, v);
 }
 
 pair<Vector, Matrix> get_first_eigenvalues(const Matrix& X, unsigned num, unsigned num_iter, double epsilon)
