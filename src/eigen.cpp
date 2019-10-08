@@ -6,7 +6,7 @@
 using namespace std;
 
 
-pair<double, Vector> power_iteration(const Matrix& A, unsigned num_iter, double eps)
+pair<double, Vector> power_iteration(const Matrix& A,  Criterion crit, unsigned num_iter, double eps)
 {
     Vector v = Vector::Random(A.cols());
     double lambda = 0;
@@ -21,29 +21,35 @@ pair<double, Vector> power_iteration(const Matrix& A, unsigned num_iter, double 
         v = Av/Av.norm();
         Av = A*v;
 
-        prev_lambda = lambda;
+        if (crit != eigenvectors) {
+            prev_lambda = lambda;
+            lambda = (v.transpose()*Av);
+            lambda /= v.norm();
+
+            if (crit != residual_vector && std::abs(prev_lambda-lambda) < eps) {
+                //std::cout << "[c2] corta PM por diferencia entre autovalores en iteración: " << i+1 << "/" << num_iter << '\n';
+                break;
+            }
+            residual = Av - lambda*v;
+            if (crit != eigenvalues && (residual).norm() < eps) {
+                std::cout << "[c3] corta PM por diferencia residual en iteración: " << i+1 << "/" << num_iter << '\n';
+                break;
+            }
+        }
+        if ((crit == all || crit == eigenvectors) && (prev_v-v).norm() < eps) {
+            //std::cout << "[c1] corta PM por diferencia entre autovectores en iteración: " << i+1 << "/" << num_iter << '\n';
+            break;
+        }
+    }
+    if (crit == eigenvectors) {
         lambda = (v.transpose()*Av);
         lambda /= v.norm();
-
-        if ((prev_v-v).norm() < eps) {
-            std::cout << "[c1] corta PM por diferencia entre autovectores en iteración: " << i+1 << "/" << num_iter << '\n';
-            break;
-        }
-        if (std::abs(prev_lambda-lambda) < eps) {
-            std::cout << "[c2] corta PM por diferencia entre autovalores en iteración: " << i+1 << "/" << num_iter << '\n';
-            break;
-        }
-        residual = Av - lambda*v;
-        if ((residual).norm() < eps) {
-            std::cout << "[c3] corta PM por diferencia residual en iteración: " << i+1 << "/" << num_iter << '\n';
-            break;
-        }
     }
 
     return make_pair(lambda, v);
 }
 
-pair<Vector, Matrix> get_first_eigenvalues(const Matrix& X, unsigned num, unsigned num_iter, double epsilon)
+pair<Vector, Matrix> get_first_eigenvalues(const Matrix& X, unsigned num, Criterion crit, unsigned num_iter, double epsilon)
 {
     Matrix A(X);
     Vector eigvalues(num);
@@ -51,7 +57,7 @@ pair<Vector, Matrix> get_first_eigenvalues(const Matrix& X, unsigned num, unsign
 
     for(unsigned i = 0; i < num; ++i){
         std::cout << "i / num: " << i+1 << " / " << num << '\n';
-        auto eigvalue_vector = power_iteration(A, num_iter, epsilon);
+        auto eigvalue_vector = power_iteration(A, crit, num_iter, epsilon);
         eigvalues(i) = eigvalue_vector.first;
         eigvectors.col(i) = eigvalue_vector.second;
         A = A - eigvalue_vector.first * eigvalue_vector.second * eigvalue_vector.second.transpose();

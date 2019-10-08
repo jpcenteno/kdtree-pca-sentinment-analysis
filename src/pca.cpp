@@ -5,15 +5,20 @@
 using namespace std;
 
 
-PCA::PCA(unsigned int n_components) : _nComponents(n_components)
+PCA::PCA(unsigned int n_components, Criterion crit) : _nComponents(n_components), _crit(crit)
 {
 
+}
+
+PCA::PCA(unsigned int n_components) : _nComponents(n_components)
+{
+    _crit = all;
 }
 
 void PCA::fit(SparseMatrix X)
 {
     _covMatrix = getCovariance(X);
-    _eigenvalues_vectors = get_first_eigenvalues(_covMatrix, _nComponents);
+    _eigenvalues_vectors = get_first_eigenvalues(_covMatrix, _nComponents, _crit);
 }
 
 MatrixXd PCA::transform(SparseMatrix X)
