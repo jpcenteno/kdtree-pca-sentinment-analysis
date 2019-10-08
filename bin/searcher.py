@@ -89,9 +89,11 @@ class KNNHyperParameters(SearchProblem):
     def actions(self, state):
         """this method receives a state, and must return the list of actions that can be performed from that particular state. """
         k, alfa = state
-        nexts = [(n, a)
-                 for n in [-self.neightbours_step, +self.neightbours_step]
-                 for a in [-self.pca_step, +self.pca_step]]
+        # generamos los siguientes con cuidado de no devolver valores inválidos
+        nexts = filter(lambda t: t[0] + k < 1 or t[1] + alfa < 2,
+                       [(n, a)
+                        for n in [-self.neightbours_step, +self.neightbours_step]
+                        for a in [-self.pca_step, +self.pca_step]])
         self.log("Estoy en {}, considerando frontera...".format(state))
         return nexts
 
