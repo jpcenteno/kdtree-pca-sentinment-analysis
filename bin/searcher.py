@@ -187,6 +187,8 @@ if __name__ == "__main__":
     parser.add_argument('--use-dense-override', dest='use_sparse_override', action='store_false'
                         ,help='Le pasa matrices densas a las funciones de knn y pca siempre')
     parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None)
+    parser.add_argument('--data-set-cut', type=float, default=None
+                        ,help='Porcentaje del data set a utilizar')
 
     args = parser.parse_args()
 
@@ -198,13 +200,20 @@ if __name__ == "__main__":
 
     df = pd.read_csv(args.data_set, index_col=0)
 
-    print("Cantidad de documentos: {}".format(df.shape[0]))
+    print("Cantidad de documentos totales en el dataset: {}".format(df.shape[0]))
 
     text_train = df[df.type == 'train']["review"]
     label_train = df[df.type == 'train']["label"]
-
     text_test = df[df.type == 'test']["review"]
     label_test = df[df.type == 'test']["label"]
+
+    if args.data_set_cut:
+        print("Achicando dataset al {}".format(args.data_set))
+        text_train = text_train[:int(len(text_train)*args.data_set_cut)]
+        print(len(text_train))
+        label_train = label_train[:int(len(label_train)*args.data_set_cut)]
+        text_test = text_test[:int(len(text_test)*args.data_set_cut)]
+        label_test = label_test[:int(len(label_test)*args.data_set_cut)]
 
     print("Class balance : {} pos {} neg".format(
     (label_train == 'pos').sum() / label_train.shape[0],
@@ -249,8 +258,16 @@ if __name__ == "__main__":
         from simpleai.search.local import hill_climbing
         result = hill_climbing(knn_problem, viewer=visor, iterations_limit=args.iterations_limit)
         print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
-    if args.algorithm == "beam":
+
+    elif args.algorithm == "beam":
         print("Resolviendo con Beam")
         from simpleai.search.local import beam
         result = beam(knn_problem, viewer=visor, beam_size=args.beam_size, iterations_limit=args.iterations_limit)
         print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
+
+    elif args.algorithm == "grid-beam":
+        print("TODO!")
+#        print("Resolviendo con Beam no random, engrillado")
+#        knn_problem = KNNGridDecorator(knn_problem)
+#        result = beam(knn_problem, viewer=visor, beam_size=args.beam_size, iterations_limit=args.iterations_limit)
+#        print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
