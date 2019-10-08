@@ -16,6 +16,7 @@ sys.path.append('../build/')
 import sentiment
 
 import random
+import math
 
 ######################################################################
 ###                                                                ###
@@ -24,10 +25,14 @@ import random
 ######################################################################
 dataset_default="../data/imdb_small.csv"
 initial_neightbours_default=100
-neightbours_step_default=10
+neightbours_step_default=2
+pca_step_default=2
+# ver KNNGridDecorator para entender que es divition_scale
+divition_scale_default=16
 print_log_default=True
 usar_pca_default=True
-
+#
+beam_size_default=10
 ##################################################################################
 ###                                                                            ###
 ### La definición del problema para que lo resuelva algun algoritmo de simpleai###
@@ -39,8 +44,11 @@ class KNNHyperParameters(SearchProblem):
     def __init__(self, X_train, Y_train, X_test, Y_test
                  ,classifier_from="sentiment", pca_from="sentiment"
                  ,min_time=5, max_time=15, time_penalization=1.2
-                 ,neightbours_step = neightbours_step_default, initial_neightbours=initial_neightbours_default
-                 ,usar_pca=usar_pca_default, initial_pca = None, memoize_pca = True, print_log=print_log_default):
+                 ,neightbours_step = neightbours_step_default
+                 ,pca_step = pca_step_default
+                 ,initial_neightbours=initial_neightbours_default
+                 ,initial_pca = None
+                 ,usar_pca=usar_pca_default, memoize_pca = True, print_log=print_log_default):
 
         """Recibe conjuntos de entreamiento y testeo y dos strings
         classifier_from y pca_from, que pueden ser sentiment si se usa
@@ -60,7 +68,7 @@ class KNNHyperParameters(SearchProblem):
             initial_pca = int(X_train.shape[1] / 20)
 
         self.neightbours_step = neightbours_step
-        self.pca_step = neightbours_step
+        self.pca_step = pca_step
         super().__init__((initial_neightbours, initial_pca))
 
         if classifier_from == "sklearn":
@@ -152,6 +160,29 @@ class KNNHyperParameters(SearchProblem):
             return acc / time
         return acc / (self.time_penalization * time) # acá tengo problemas con empates, pero fue
 
+    def log(self, msg):
+        if self.print_log:
+            print(msg)
+
+class KNNDecorator(KNNHyperParameters):
+
+    def __init__(self, decorated):
+        self.decorated = decorated
+
+    def value(self, state):
+        return self.decorated.value(state)
+
+    def result(self, state, action):
+        return self.decorated.result(state, action)
+
+    def actions(self, state):
+        return self.decorated.actions(state)
+
+class KNNRandomStateDecorator(KNNDecorator):
+
+    def __init__(self, decorated):
+        super().__init__(decorated)
+
     def generate_random_state(self):
         """this method receives nothing, and must return a randomly generated state.
 
@@ -159,11 +190,41 @@ class KNNHyperParameters(SearchProblem):
         por 10. Muestras de entrenamiento / 10 => max vecinos,
         vocabulario / 10 => max alfa"""
 
-        return (random.randrange(1, int(self.X_train.shape[0] / 10)), random.randrange(1, int(self.X_train.shape[1] / 10)))
+        return (random.randrange(1, int(self.decorated.X_train.shape[0] / 10)),
+                random.randrange(1, int(self.decorated.X_train.shape[1] / 10)))
 
-    def log(self, msg):
-        if self.print_log:
-            print(msg)
+
+class KNNGridDecorator(KNNDecorator):
+    """Genera estados iniciales a partir de una grilla y los devuelve en orden aleatorio
+    Este decorator, toma una instancia del problema y le agrega el método generate_random_state
+
+    Es para usar con algoritmos que requieren varios estados iniciales aleatorios, como beam.
+
+    la escala de division está relacionada con el step y el beam size
+
+    beam_size: es la cantidad de estados iniciales, divition_scale es
+    el tamaño en cada dimensión. De esta manera si beam_size = 4
+    divition_scale = 10, debería generar cuatro puntos distantes en
+    10, en cada dimensión. Es divition_scale, porque escala por el
+    aspect_ratio del step en cada dimensión de la búsqueda local. Esto
+    es para que la busqueda local tenga la misma proba de cubrir el
+    tamaño de cada grilla en cada dimensión
+    """
+
+    def __init__(self, decorated, seeders, divition_scale):
+        print("Generando Grilla")
+        super().__init__(decorated)
+        aspect_ratio = int(decorated.pca_step / decorated.neightbours_step)
+        divitions = int(math.sqrt(seeders))
+        self.grid = []
+        for k in range(1, divitions * divition_scale, divition_scale):
+            for alpha in range(2, divitions * divition_scale, divition_scale * aspect_ratio):
+                self.grid.append((k, alpha))
+
+    def generate_random_state(self):
+        print("Devolviendo algún valor de la grilla")
+        i = random.randrange(0, len(self.grid))
+        return self.grid.pop(i)
 
 if __name__ == "__main__":
     import argparse
@@ -184,10 +245,10 @@ if __name__ == "__main__":
                         ,help='Indica que NO se usará PCA')
     parser.add_argument('--data-set', type=str, default=dataset_default
                         ,help='path del dataset, puede ser relativo descomprimido - por defecto usa ../../data/imdb_small.csv')
-    parser.add_argument('--algorithm', choices=["hill_climbing", "beam"], default="hill_climbing"
+    parser.add_argument('--algorithm', choices=["hill_climbing", "beam", "grid-beam"], default="hill_climbing"
                         ,help='El algoritmo a usar para la búsqueda')
-    parser.add_argument('--beam-size', type=int, default=100
-                        ,help='Si se usa beamer, la cantidad de estados iniciales que se considera - por defecto 100')
+    parser.add_argument('--beam-size', type=int, default=beam_size_default
+                        ,help='Si se usa beamer, la cantidad de estados iniciales que se considera - por defecto 10')
     parser.add_argument('--iterations_limit', type=int, default=None
                         ,help="Si se pasa, acota la cantidad de iteraciones - por defecto sigue hasta que no puede mejorar")
     parser.add_argument('--use-sparse-override', dest='use_sparse_override', action='store_true'
@@ -200,6 +261,8 @@ if __name__ == "__main__":
                         ,help='Indica si la busqueda local NO debe memoizar PCA.')
     parser.add_argument('--data-set-cut', type=float, default=None
                         ,help='Porcentaje del data set a utilizar')
+    parser.add_argument('--divition-scale', type=int, default=divition_scale_default
+                        ,help="La escala en cada dimensión de la grilla de estados iniciales")
     parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None,memoize_pca=True)
 
     args = parser.parse_args()
@@ -274,12 +337,13 @@ if __name__ == "__main__":
     elif args.algorithm == "beam":
         print("Resolviendo con Beam")
         from simpleai.search.local import beam
+        knn_problem = KNNRandomStateDecorator(knn_problem)
         result = beam(knn_problem, viewer=visor, beam_size=args.beam_size, iterations_limit=args.iterations_limit)
         print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
 
     elif args.algorithm == "grid-beam":
-        print("TODO!")
-#        print("Resolviendo con Beam no random, engrillado")
-#        knn_problem = KNNGridDecorator(knn_problem)
-#        result = beam(knn_problem, viewer=visor, beam_size=args.beam_size, iterations_limit=args.iterations_limit)
-#        print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
+        print("Resolviendo con Beam no random, engrillado")
+        from simpleai.search.local import beam
+        knn_problem = KNNGridDecorator(knn_problem, args.beam_size, args.divition_scale)
+        result = beam(knn_problem, viewer=visor, beam_size=args.beam_size, iterations_limit=args.iterations_limit)
+        print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
