@@ -23,7 +23,7 @@ pair<double, Vector> donde el primer valor es el autovalor
 y el segundo el autovector asociado
 */
 std::pair<double, Vector>
-    power_iteration(const Matrix& mat, unsigned num_iter=5000, double eps=1e-16);
+    power_iteration(const Matrix& mat, unsigned num_iter=5000, double eps=1e-4);
 
 
 /*
