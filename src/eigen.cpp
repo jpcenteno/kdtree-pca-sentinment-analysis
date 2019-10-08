@@ -15,9 +15,10 @@ pair<double, Vector> power_iteration(const Matrix& X, unsigned num_iter, double 
         const Vector& tmp = X*b;
         const Vector& next_b = tmp / tmp.norm();
         if ((next_b-b).norm() < eps) {
-            std::cout << "corta PM por diferencia" << '\n';
-            b = next_b;
-            break;
+          std::cout << "[c1] corta PM por diferencia entre autovectores en iteración: "
+                     << i + 1 << "/" << num_iter << '\n';
+          b = next_b;
+          break;
         }
         b = next_b;
     }
