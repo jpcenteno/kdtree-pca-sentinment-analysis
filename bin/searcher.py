@@ -48,7 +48,7 @@ class KNNHyperParameters(SearchProblem):
         python.
 
         initial_neightbours es la cantidad e vecinos iniciales, si no se especifica toma 100
-        initial_pca es la cantidad de componentes principales si es None, toma el 50% del vocabulario de X_train
+        initial_pca es la cantidad de componentes principales si es None, toma el 5% del vocabulario de X_train
 
         min_time y max_time son minutos, min_time es el tiempo por debajo
         del cual, solo nos importa la precision. Entre ambos valores, tomamos una razón entre precisión y tiempo.
@@ -57,7 +57,7 @@ class KNNHyperParameters(SearchProblem):
         """
 
         if initial_pca == None:
-            initial_pca = int(X_train.shape[1] / 2)
+            initial_pca = int(X_train.shape[1] / 20)
 
         self.neightbours_step = neightbours_step
         self.pca_step = neightbours_step
