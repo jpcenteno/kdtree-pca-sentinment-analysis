@@ -26,16 +26,22 @@ pair<double, Vector> power_iteration(const Matrix& A, unsigned num_iter, double 
         lambda /= v.norm();
 
         if ((prev_v-v).norm() < eps) {
+            #ifdef LLVL1
             std::cout << "[c1] corta PM por diferencia entre autovectores en iteración: " << i+1 << "/" << num_iter << '\n';
+            #endif
             break;
         }
         if (std::abs(prev_lambda-lambda) < eps) {
+            #ifdef LLVL1
             std::cout << "[c2] corta PM por diferencia entre autovalores en iteración: " << i+1 << "/" << num_iter << '\n';
+            #endif
             break;
         }
         residual = Av - lambda*v;
         if ((residual).norm() < eps) {
+            #ifdef LLVL1
             std::cout << "[c3] corta PM por diferencia residual en iteración: " << i+1 << "/" << num_iter << '\n';
+            #endif
             break;
         }
     }
@@ -50,7 +56,9 @@ pair<Vector, Matrix> get_first_eigenvalues(const Matrix& X, unsigned num, unsign
     Matrix eigvectors(A.rows(), num);
 
     for(unsigned i = 0; i < num; ++i){
+        #ifdef LLVL1
         std::cout << "i / num: " << i+1 << " / " << num << '\n';
+        #endif
         auto eigvalue_vector = power_iteration(A, num_iter, epsilon);
         eigvalues(i) = eigvalue_vector.first;
         eigvectors.col(i) = eigvalue_vector.second;
