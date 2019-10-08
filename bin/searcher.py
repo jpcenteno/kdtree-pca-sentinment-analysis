@@ -12,15 +12,28 @@ from time import process_time
 # lo ideal es que esto sea parámetro, pero bue
 from sklearn.neighbors import KNeighborsClassifier
 import sys
-sys.path.append('../../build/')
+sys.path.append('../build/')
 import sentiment
 
 import random
 
+######################################################################
+###                                                                ###
+###      Algunos valores por defecto, para la clase y el main      ###
+###                                                                ###
+######################################################################
+dataset_default="../data/imdb_small.csv"
 initial_neightbours_default=100
 neightbours_step_default=10
 print_log_default=True
 usar_pca_default=True
+
+##################################################################################
+###                                                                            ###
+### La definición del problema para que lo resuelva algun algoritmo de simpleai###
+###                                                                            ###
+##################################################################################
+
 class KNNHyperParameters(SearchProblem):
 
     def __init__(self, X_train, Y_train, X_test, Y_test
@@ -35,7 +48,7 @@ class KNNHyperParameters(SearchProblem):
         python.
 
         initial_neightbours es la cantidad e vecinos iniciales, si no se especifica toma 100
-        initial_pca es la cantidad de componentes principales si es None, toma el 50% del vocabulario de X_train
+        initial_pca es la cantidad de componentes principales si es None, toma el 5% del vocabulario de X_train
 
         min_time y max_time son minutos, min_time es el tiempo por debajo
         del cual, solo nos importa la precision. Entre ambos valores, tomamos una razón entre precisión y tiempo.
@@ -44,7 +57,7 @@ class KNNHyperParameters(SearchProblem):
         """
 
         if initial_pca == None:
-            initial_pca = int(X_train.shape[1] / 2)
+            initial_pca = int(X_train.shape[1] / 20)
 
         self.neightbours_step = neightbours_step
         self.pca_step = neightbours_step
@@ -157,9 +170,11 @@ if __name__ == "__main__":
                         ,help='Si imprime los logs a medida de que avanza - por defecto usa el de la clase')
     parser.add_argument('--n-step', type=int, default=neightbours_step_default
                         ,help='El tamaño del paso al moverse por el vecindario en la dimensión de vecinos - por defecto usa el de la clase')
-    parser.add_argument('--use-pca', type=bool, default=usar_pca_default,
-                        help='Indica si usar o no PCA, si no usa utiliza matrices esparsas')
-    parser.add_argument('--data-set', type=str, default="../../data/imdb_small.csv"
+    parser.add_argument('--use-pca', dest='use_pca', action='store_true'
+                        ,help='Indica que se usará PCA')
+    parser.add_argument('--not-use-pca', dest='use_pca', action='store_false'
+                        ,help='Indica que NO se usará PCA')
+    parser.add_argument('--data-set', type=str, default=dataset_default
                         ,help='path del dataset, puede ser relativo descomprimido - por defecto usa ../../data/imdb_small.csv')
     parser.add_argument('--algorithm', choices=["hill_climbing", "beam"], default="hill_climbing"
                         ,help='El algoritmo a usar para la búsqueda')
@@ -167,6 +182,7 @@ if __name__ == "__main__":
                         ,help='Si se usa beamer, la cantidad de estados iniciales que se considera - por defecto 100')
     parser.add_argument('--iterations_limit', type=int, default=None
                         ,help="Si se pasa, acota la cantidad de iteraciones - por defecto sigue hasta que no puede mejorar")
+    parser.set_defaults(use_pca=usar_pca_default)
     #parser.add_argument('--alpha-step', type=int, default=None
     #                    ,help='El tamaño del paso al moverse por el vecindario en la dimensión de las componentes principales - por defecto usa el de la clase')
 
@@ -198,12 +214,15 @@ if __name__ == "__main__":
     vectorizer.fit(text_train)
     # ENDCHORIPASTEO
 
-    if True: #not args.use_pca and args.implementation=='sklearn':
-        X_train, y_train = vectorizer.transform(text_train), (label_train == 'pos').values
-        X_test, y_test = vectorizer.transform(text_test), (label_test == 'pos').values
-    else:
+    print(args)
+    if args.use_pca and args.implementation=='sklearn':
+        print("Usando sklearn con PCA, transformando matrices a densas desde python.")
         X_train, y_train = vectorizer.transform(text_train).todense(), (label_train == 'pos').values
         X_test, y_test = vectorizer.transform(text_test).todense(), (label_test == 'pos').values
+    else:
+        print("Usando sentiment o sklearn sin PCA, dejamos las matrices esparsas")
+        X_train, y_train = vectorizer.transform(text_train), (label_train == 'pos').values
+        X_test, y_test = vectorizer.transform(text_test), (label_test == 'pos').values
 
     print("Creando Problema")
     knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test
