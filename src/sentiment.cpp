@@ -32,7 +32,7 @@ PYBIND11_MODULE(sentiment, m) {
         py::arg("X"),
         py::arg("criterion")="all",
         py::arg("num_iter")=5000,
-        py::arg("epsilon")=0.001
+        py::arg("epsilon")=1e-4
     );
     m.def(
         "get_first_eigenvalues", &get_first_eigenvalues,
@@ -41,7 +41,7 @@ PYBIND11_MODULE(sentiment, m) {
         py::arg("num"),
         py::arg("criterion")="all",
         py::arg("num_iter")=5000,
-        py::arg("epsilon")=0.001
+        py::arg("epsilon")=1e-4
     );
 
 }

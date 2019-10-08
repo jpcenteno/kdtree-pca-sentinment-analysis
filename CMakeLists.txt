@@ -7,6 +7,16 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS 1)
 set (CMAKE_CXX_STANDARD 11)
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
+IF(CMAKE_ENABLE_LOG_LVL1 MATCHES "1|[Ss]i|[Yy]es|[Tt]rue")
+  message("Habilitando Log de Funciones de nivel 1")
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLLVL1")
+ENDIF()
+
+IF(CMAKE_ENABLE_LOG_LVL2 MATCHES "1|[Ss]i|[Yy]es|[Tt]rue")
+  message("Habilitando Log de Funciones de nivel 1")
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLLVL1 -DLLVL2")
+ENDIF()
+# and so on ... 
 
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
     message("Debug mode")
