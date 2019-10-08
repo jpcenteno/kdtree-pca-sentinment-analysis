@@ -47,7 +47,7 @@ Devuelve:
 --------
 
 pair<Vector, Matrix> donde:
-    - El primero elemento es un vector de los autovalores
+    - El primer elemento es un vector de los autovalores
     - El segundo elemento es una matriz cuyas columnas son los autovectores
       correspondientes
 */
