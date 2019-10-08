@@ -12,7 +12,7 @@ from time import process_time
 # lo ideal es que esto sea parámetro, pero bue
 from sklearn.neighbors import KNeighborsClassifier
 import sys
-sys.path.append('../../build/')
+sys.path.append('../build/')
 import sentiment
 
 import random
