@@ -182,9 +182,11 @@ if __name__ == "__main__":
                         ,help='Si se usa beamer, la cantidad de estados iniciales que se considera - por defecto 100')
     parser.add_argument('--iterations_limit', type=int, default=None
                         ,help="Si se pasa, acota la cantidad de iteraciones - por defecto sigue hasta que no puede mejorar")
-    parser.set_defaults(use_pca=usar_pca_default)
-    #parser.add_argument('--alpha-step', type=int, default=None
-    #                    ,help='El tamaño del paso al moverse por el vecindario en la dimensión de las componentes principales - por defecto usa el de la clase')
+    parser.add_argument('--use-sparse-override', dest='use_sparse_override', action='store_true'
+                        ,help='Le pasa matrices ralas a las funciones de knn y pca siempre')
+    parser.add_argument('--use-dense-override', dest='use_sparse_override', action='store_false'
+                        ,help='Le pasa matrices densas a las funciones de knn y pca siempre')
+    parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None)
 
     args = parser.parse_args()
 
@@ -215,14 +217,23 @@ if __name__ == "__main__":
     # ENDCHORIPASTEO
 
     print(args)
-    if args.use_pca and args.implementation=='sklearn':
-        print("Usando sklearn con PCA, transformando matrices a densas desde python.")
+    if args.use_sparse_override == True:
+        print("Alimentando PCA y KNN con matrices ralas forzozamente")
+        X_train, y_train = vectorizer.transform(text_train), (label_train == 'pos').values
+        X_test, y_test = vectorizer.transform(text_test), (label_test == 'pos').values
+    elif args.use_sparse_override == False:
+        print("Alimentando PCA y KNN con matrices densas forzozamente")
         X_train, y_train = vectorizer.transform(text_train).todense(), (label_train == 'pos').values
         X_test, y_test = vectorizer.transform(text_test).todense(), (label_test == 'pos').values
     else:
-        print("Usando sentiment o sklearn sin PCA, dejamos las matrices esparsas")
-        X_train, y_train = vectorizer.transform(text_train), (label_train == 'pos').values
-        X_test, y_test = vectorizer.transform(text_test), (label_test == 'pos').values
+        if args.use_pca and args.implementation=='sklearn':
+            print("Usando sklearn con PCA, transformando matrices a densas desde python.")
+            X_train, y_train = vectorizer.transform(text_train).todense(), (label_train == 'pos').values
+            X_test, y_test = vectorizer.transform(text_test).todense(), (label_test == 'pos').values
+        else:
+            print("Usando sentiment o sklearn sin PCA, dejamos las matrices esparsas")
+            X_train, y_train = vectorizer.transform(text_train), (label_train == 'pos').values
+            X_test, y_test = vectorizer.transform(text_test), (label_test == 'pos').values
 
     print("Creando Problema")
     knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test
