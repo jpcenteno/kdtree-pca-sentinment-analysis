@@ -40,7 +40,7 @@ class KNNHyperParameters(SearchProblem):
                  ,classifier_from="sentiment", pca_from="sentiment"
                  ,min_time=5, max_time=15, time_penalization=1.2
                  ,neightbours_step = neightbours_step_default, initial_neightbours=initial_neightbours_default
-                 ,usar_pca=usar_pca_default, initial_pca = None, print_log=print_log_default):
+                 ,usar_pca=usar_pca_default, initial_pca = None, memoize_pca = True, print_log=print_log_default):
 
         """Recibe conjuntos de entreamiento y testeo y dos strings
         classifier_from y pca_from, que pueden ser sentiment si se usa
@@ -83,13 +83,11 @@ class KNNHyperParameters(SearchProblem):
         self.time_penalization = time_penalization
 
         self.usar_pca = usar_pca
+        self.memoize_pca = {} if memoize_pca else None
         self.print_log = print_log
 
     def actions(self, state):
-        """this method receives a state, and must return the list of actions that can be performed from that particular state.
-
-        La idea es:
-        """
+        """this method receives a state, and must return the list of actions that can be performed from that particular state. """
         k, alfa = state
         nexts = [(n, a)
                  for n in [-self.neightbours_step, +self.neightbours_step]
@@ -111,11 +109,19 @@ class KNNHyperParameters(SearchProblem):
         beg = process_time()
         if self.usar_pca:
             self.log("Transformando datos (PCA)")
-            time_log = process_time()
-            pca = self.pca_klass_constructor(alfa)
-            x_train = pca.fit_transform(self.X_train)
-            x_test = pca.fit_transform(self.X_test)
-            self.log("listo - elapsed {} segundos en PCA".format(process_time() - time_log))
+            if alfa in self.memoize_pca:
+                print("Ya calculado, obteniendo resultado memoizado (PCA)")
+                x_train, x_test = self.memoize_pca[alfa]
+            else:
+                print("Calculando (PCA)")
+                time_log = process_time()
+                pca = self.pca_klass_constructor(alfa)
+                x_train = pca.fit_transform(self.X_train)
+                x_test = pca.fit_transform(self.X_test)
+                self.log("listo - elapsed {} segundos en PCA".format(process_time() - time_log))
+                if not self.memoize_pca == None:
+                    print("Guardando memoizacion (PCA)")
+                    self.memoize_pca[alfa] = (x_train, x_test)
         else:
             x_train = self.X_train
             x_test = self.X_test
@@ -186,9 +192,13 @@ if __name__ == "__main__":
                         ,help='Le pasa matrices ralas a las funciones de knn y pca siempre')
     parser.add_argument('--use-dense-override', dest='use_sparse_override', action='store_false'
                         ,help='Le pasa matrices densas a las funciones de knn y pca siempre')
-    parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None)
+    parser.add_argument('--memoize-pca', dest='memoize_pca', action='store_true'
+                        ,help='Indica que la busqueda local debe memoizar PCA.')
+    parser.add_argument('--no-memoize-pca', dest='memoize_pca', action='store_true'
+                        ,help='Indica si la busqueda local NO debe memoizar PCA.')
     parser.add_argument('--data-set-cut', type=float, default=None
                         ,help='Porcentaje del data set a utilizar')
+    parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None,memoize_pca=True)
 
     args = parser.parse_args()
 
@@ -248,7 +258,7 @@ if __name__ == "__main__":
     knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test
                                      ,classifier_from=args.implementation, pca_from=args.implementation
                                      ,neightbours_step=args.n_step, initial_neightbours=args.n, initial_pca=args.alpha
-                                     ,usar_pca=args.use_pca, print_log=args.print_log)
+                                     ,usar_pca=args.use_pca, memoize_pca=args.memoize_pca, print_log=args.print_log)
 
     from simpleai.search.viewers import BaseViewer
     visor = BaseViewer()
