@@ -31,6 +31,7 @@ Vector KNNClassifier::predict(SparseMatrix X)
     #ifdef LLVL1
     cout << "test : " << classify.rows() << " " << classify.cols() << endl;
     cout << "model: " << _X.rows() << " " << _X.cols() << endl;
+    cout << "tree: " << _kd_tree.dimension() << " " << _kd_tree.size() << endl;
     #endif
     _kd_tree.query(classify, _neighbors, idx, dists);
 
