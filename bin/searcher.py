@@ -103,6 +103,7 @@ class KNNHyperParameters(SearchProblem):
         self.memoize_clf = {}
         self.memoize_state = {}
         self.print_log = print_log
+        self.metadata = None
 
     def get_classifier(self, neightbours, alfa, x_train):
         if not self.usar_pca:
@@ -265,19 +266,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Hacer alguna busqueda local sobre los hiperparámetros de KNN.')
     parser.add_argument('implementation', choices=["sentiment", "sklearn"]
                         ,help='usar "sentiment" nuestra implementación de KNN y PCA o la de la biblioteca "sklearn"')
-    parser.add_argument('-n', type=int, default=initial_neightbours_default
+    parser.add_argument('-k', type=int, default=initial_neightbours_default
                         ,help='La cantidad inicial de vecinos a considerar - por defecto usa el de la clase')
     parser.add_argument('--alpha', type=int, default=None
                         ,help='La cantidad de componentes principales incial a considerar - por defecto usa el de la clase')
     parser.add_argument('--print-log', type=bool, default=print_log_default
                         ,help='Si imprime los logs a medida de que avanza - por defecto usa el de la clase')
-    parser.add_argument('--n-step', type=int, default=neightbours_step_default
+    parser.add_argument('--k-step', type=int, default=neightbours_step_default
                         ,help='El tamaño del paso al moverse por el vecindario en la dimensión de vecinos - por defecto usa el de la clase')
+    parser.add_argument('--alpha-step', type=int, default=pca_step_default
+                        ,help='El tamaño del paso al moverse por el vecindario en la dimensión de componentes principales')
     parser.add_argument('--use-pca', dest='use_pca', action='store_true'
                         ,help='Indica que se usará PCA')
     parser.add_argument('--not-use-pca', dest='use_pca', action='store_false'
                         ,help='Indica que NO se usará PCA')
-    parser.add_argument('--data-set', type=str, default=dataset_default
+    parser.add_argument('--data-set', type=Path, default=dataset_default
                         ,help='path del dataset, puede ser relativo descomprimido - por defecto usa ../../data/imdb_small.csv')
     parser.add_argument('--algorithm', choices=["hill-climbing", "beam", "grid-beam"], default="hill_climbing"
                         ,help='El algoritmo a usar para la búsqueda')
@@ -304,11 +307,22 @@ if __name__ == "__main__":
     parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None,memoize_pca=True)
 
     args = parser.parse_args()
+    p = Path()
+
+    file_suffix = str(args.algorithm)
+    file_suffix += '_' + str(args.implementation)
+    file_suffix += '_k:' + str(args.k)
+    file_suffix += '_a:' + str(args.alpha)
+    file_suffix += '_k-s:' + str(args.k_step)
+    file_suffix += '_a-step:' + str(args.alpha_step)
+    if str(args.implementation) in ["beam", "grid-beam"]:
+        file_suffix += "_beam-size:" + str(args.beam_size)
+    file_suffix += '_' + str(args.data_set.parts[-1])
 
     if not args.out_history:
-        args.out_history="history_" + args.algorithm + '_' + args.data_set + '.csv'
+        args.out_history="history_" + file_suffix
     if not args.out_metadata:
-        args.out_metadata="metadata_" + args.algorithm + '_' + args.data_set + '.csv'
+        args.out_metadata="metadata_" + file_suffix
 
     # BEGIN CHORIPASTEO
     import pandas as pd
@@ -369,7 +383,8 @@ if __name__ == "__main__":
     print("Creando Problema")
     knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test
                                      ,classifier_from=args.implementation, pca_from=args.implementation
-                                     ,neightbours_step=args.n_step, initial_neightbours=args.n, initial_pca=args.alpha
+                                     ,neightbours_step=args.k_step, pca_step=args.alpha_step
+                                     ,initial_neightbours=args.k, initial_pca=args.alpha
                                      ,usar_pca=args.use_pca, memoize_pca=args.memoize_pca, print_log=args.print_log)
 
     from simpleai.search.viewers import BaseViewer
@@ -396,10 +411,10 @@ if __name__ == "__main__":
         print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
 
     if knn_problem.metadata:
-        with open(args.out_metadata) as metadata_file:
+        with open(args.out_metadata, 'w') as metadata_file:
             if args.algorithm == "grid-beam":
-                metadata_file.write("K; PCA;")
+                metadata_file.write("K, PCA")
                 for point in knn_problem.metadata:
                     k, alfa = point
-                    metadata_file.write(str(k) + "; " + str(alfa) + "\n")
+                    metadata_file.write(str(k) + ", " + str(alfa) + "\n")
 
