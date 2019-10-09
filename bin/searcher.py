@@ -93,6 +93,8 @@ class KNNHyperParameters(SearchProblem):
         self.usar_pca = usar_pca
         self.memoize_pca = {} if memoize_pca else None
         self.memoize_clf = {}
+        self.memoize_state = {}
+        self.searh_history = []
         self.print_log = print_log
 
     def get_classifier(self, neightbours, alfa, x_train):
@@ -104,12 +106,12 @@ class KNNHyperParameters(SearchProblem):
                 clf = self.memoize_clf[alfa]
                 clf.setNeightbors(neightbours)
                 return clf
-            else:
-                print("Construyendo y Fitteando Classificador")
-                clf = self.classifier_klass_constructor(neightbours)
-                clf.fit(x_train, self.Y_train)
-                self.memoize_clf[alfa] = clf
-                return clf
+        else:
+            print("Construyendo y Fitteando Classificador")
+            clf = self.classifier_klass_constructor(neightbours)
+            clf.fit(x_train, self.Y_train)
+            self.memoize_clf[alfa] = clf
+            return clf
 
     def actions(self, state):
         """this method receives a state, and must return the list of actions that can be performed from that particular state. """
@@ -130,6 +132,9 @@ class KNNHyperParameters(SearchProblem):
 
     def value(self, state):
         """This method receives a state, and returns a valuation (“score”) of that value. Better states must have higher scores."""
+        if state in self.memoize_state:
+            return self.memoize_state[state]
+
         self.log("Calculando Score de {}".format(state))
         k, alfa = state
 
@@ -166,6 +171,8 @@ class KNNHyperParameters(SearchProblem):
 
         score = self._score(time, acc)
         self.log("Evaluando: {} => Accuracy: {}, Time: {} minutos, Score: {}".format(state, acc, time, score))
+        self.memoize_state[state] = score
+        self.search_history.append(state, acc, time, score)
         return score
 
     def _score(self, time, acc):
@@ -261,7 +268,7 @@ if __name__ == "__main__":
                         ,help='Indica que NO se usará PCA')
     parser.add_argument('--data-set', type=str, default=dataset_default
                         ,help='path del dataset, puede ser relativo descomprimido - por defecto usa ../../data/imdb_small.csv')
-    parser.add_argument('--algorithm', choices=["hill_climbing", "beam", "grid-beam"], default="hill_climbing"
+    parser.add_argument('--algorithm', choices=["hill-climbing", "beam", "grid-beam"], default="hill_climbing"
                         ,help='El algoritmo a usar para la búsqueda')
     parser.add_argument('--beam-size', type=int, default=beam_size_default
                         ,help='Si se usa beamer, la cantidad de estados iniciales que se considera - por defecto 10')
@@ -279,9 +286,18 @@ if __name__ == "__main__":
                         ,help='Porcentaje del data set a utilizar')
     parser.add_argument('--divition-scale', type=int, default=divition_scale_default
                         ,help="La escala en cada dimensión de la grilla de estados iniciales")
+    parser.add_argument('--out-history', type=str, default=None
+                        ,help='Path al archivo de salida donde se guardará la historia de la búsqueda')
+    parser.add_argument('--out-metadata', type=str, default=None
+                        ,help='Path al archivo de salida donde se gaurdará metadata asociada al algoritmo, por ejemplo si se usa grid-beam, la grilla')
     parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None,memoize_pca=True)
 
     args = parser.parse_args()
+
+    if not args.out_history:
+        args.out_history="history_" + args.algorithm + '_' + args.data_set + '.csv'
+    if not args.out_metadata:
+        args.out_metadata="metadata_" + args.argorigh + '_' + args.data_set + '.csv'
 
     # BEGIN CHORIPASTEO
     import pandas as pd
@@ -344,7 +360,7 @@ if __name__ == "__main__":
     from simpleai.search.viewers import BaseViewer
     visor = BaseViewer()
 
-    if args.algorithm == "hill_climbing":
+    if args.algorithm == "hill-climbing":
         print("Resolviendo con Hill Climbing")
         from simpleai.search.local import hill_climbing
         result = hill_climbing(knn_problem, viewer=visor, iterations_limit=args.iterations_limit)
@@ -363,3 +379,9 @@ if __name__ == "__main__":
         knn_problem = KNNGridDecorator(knn_problem, args.beam_size, args.divition_scale)
         result = beam(knn_problem, viewer=visor, beam_size=args.beam_size, iterations_limit=args.iterations_limit)
         print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
+
+    with open(args.out_history) as history_file:
+        history_file.write("(K, PCA); Accuracy; Time; Score;")
+        for row in knn_problem.search_history:
+            state, acc, time, score = row
+            history_file.write(str(state) + "; " + str(acc) + "; " + str(time) + "; " + str(score))
