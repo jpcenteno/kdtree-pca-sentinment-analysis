@@ -64,6 +64,7 @@ pair<Vector, Matrix> get_first_eigenvalues(const Matrix& X, unsigned num, Criter
     for(unsigned i = 0; i < num; ++i){
         #ifdef LLVL1
         std::cout << "i / num: " << i+1 << " / " << num << '\n';
+        #endif
         auto eigvalue_vector = power_iteration(A, crit, num_iter, epsilon);
         eigvalues(i) = eigvalue_vector.first;
         eigvectors.col(i) = eigvalue_vector.second;
