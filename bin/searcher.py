@@ -92,13 +92,30 @@ class KNNHyperParameters(SearchProblem):
 
         self.usar_pca = usar_pca
         self.memoize_pca = {} if memoize_pca else None
+        self.memoize_clf = {}
         self.print_log = print_log
+
+    def get_classifier(self, neightbours, alfa, x_train):
+        if self.classifier_klass_constructor == sentiment.KNNClassifier:
+            if not self.usar_pca:
+                alfa=0
+            if alfa in self.memoize_clf:
+                print("Recuperando classifier de memoria!")
+                clf = self.memoize_clf[alfa]
+                clf.setNeightbors(neightbours)
+                return clf
+            else:
+                print("Construyendo y Fitteando Classificador")
+                clf = self.classifier_klass_constructor(neightbours)
+                clf.fit(x_train, self.Y_train)
+                self.memoize_clf[alfa] = clf
+                return clf
 
     def actions(self, state):
         """this method receives a state, and must return the list of actions that can be performed from that particular state. """
         k, alfa = state
         # generamos los siguientes con cuidado de no devolver valores inválidos
-        nexts = filter(lambda t: t[0] + k < 1 or t[1] + alfa < 2,
+        nexts = filter(lambda t: t[0] + k > 1 and t[1] + alfa > 2,
                        [(n, a)
                         for n in [-self.neightbours_step, +self.neightbours_step]
                         for a in [-self.pca_step, +self.pca_step]])
@@ -138,8 +155,7 @@ class KNNHyperParameters(SearchProblem):
 
         self.log("Fitteando y Prediciendo")
         time_log = process_time()
-        clf = self.classifier_klass_constructor(k)
-        clf.fit(x_train, self.Y_train)
+        clf = self.get_classifier(k, alfa, x_train)
         y_pred = clf.predict(x_test)
         end = process_time()
         self.log("listo - elapsed {} segundos en KNN".format(end - time_log))
@@ -215,7 +231,7 @@ class KNNGridDecorator(KNNDecorator):
         print("Generando Grilla")
         super().__init__(decorated)
         aspect_ratio = int(decorated.pca_step / decorated.neightbours_step)
-        divitions = int(math.sqrt(seeders))
+        divitions = int(math.sqrt(seeders))+1
         self.grid = []
         for k in range(1, divitions * divition_scale, divition_scale):
             for alpha in range(2, divitions * divition_scale, divition_scale * aspect_ratio):
