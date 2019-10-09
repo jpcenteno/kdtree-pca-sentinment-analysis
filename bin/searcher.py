@@ -94,7 +94,7 @@ class KNNHyperParameters(SearchProblem):
         self.memoize_pca = {} if memoize_pca else None
         self.memoize_clf = {}
         self.memoize_state = {}
-        self.searh_history = []
+        self.search_history = []
         self.print_log = print_log
 
     def get_classifier(self, neightbours, alfa, x_train):
@@ -243,11 +243,14 @@ class KNNGridDecorator(KNNDecorator):
         for k in range(1, divitions * divition_scale, divition_scale):
             for alpha in range(2, divitions * divition_scale, divition_scale * aspect_ratio):
                 self.grid.append((k, alpha))
+        self.metadata = [] # tendrá los valorse de la grilla en el orden de popeo
 
     def generate_random_state(self):
         print("Devolviendo algún valor de la grilla")
         i = random.randrange(0, len(self.grid))
-        return self.grid.pop(i)
+        point = self.grid.pop(i)
+        self.metadata.append(point)
+        return point
 
 if __name__ == "__main__":
     import argparse
@@ -297,7 +300,7 @@ if __name__ == "__main__":
     if not args.out_history:
         args.out_history="history_" + args.algorithm + '_' + args.data_set + '.csv'
     if not args.out_metadata:
-        args.out_metadata="metadata_" + args.argorigh + '_' + args.data_set + '.csv'
+        args.out_metadata="metadata_" + args.algorithm + '_' + args.data_set + '.csv'
 
     # BEGIN CHORIPASTEO
     import pandas as pd
@@ -381,7 +384,17 @@ if __name__ == "__main__":
         print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
 
     with open(args.out_history) as history_file:
-        history_file.write("(K, PCA); Accuracy; Time; Score;")
+        history_file.write("K; PCA; Accuracy; Time; Score;")
         for row in knn_problem.search_history:
             state, acc, time, score = row
-            history_file.write(str(state) + "; " + str(acc) + "; " + str(time) + "; " + str(score))
+            k, alfa = state
+            history_file.write(str(k) + "; " + str(alfa) + "; " + str(acc) + "; " + str(time) + "; " + str(score) + "\n")
+
+    if knn_problem.metadata:
+        with open(args.out_metadata) as metadata_file:
+            if args.algorithm == "grid-beam":
+                metadata_file.write("K; PCA;")
+                for point in knn_problem.metadata:
+                    k, alfa = point
+                    metadata_file.write(str(k) + "; " + str(alfa) + "\n")
+
