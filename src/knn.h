@@ -12,8 +12,8 @@ public:
     void fit(SparseMatrix X, Matrix y);
 
     Vector predict(SparseMatrix X);
+
 private:
-    double predictVector(const Vector &) const;
 
     KDTreed::Matrix _X;
     KDTreed _kd_tree;

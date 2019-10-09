@@ -92,7 +92,22 @@ class KNNHyperParameters(SearchProblem):
 
         self.usar_pca = usar_pca
         self.memoize_pca = {} if memoize_pca else None
+        self.memoize_clf = {}
         self.print_log = print_log
+
+    def get_classifier(self, neightbours, alfa, x_train):
+        if self.classifier_klass_constructor == sentiment.KNNClassifier:
+            if not self.usar_pca:
+                alfa=0
+            if alfa in self.memoize_clf:
+                print("Recuperando classifier de memoria!")
+                return self.memoize_clf[alfa]
+            else:
+                print("Construyendo y Fitteando Classificador")
+                clf = self.classifier_klass_constructor(neightbours)
+                clf.fit(x_train, self.Y_train)
+                self.memoize_clf[alfa] = clf
+                return clf
 
     def actions(self, state):
         """this method receives a state, and must return the list of actions that can be performed from that particular state. """
@@ -138,8 +153,7 @@ class KNNHyperParameters(SearchProblem):
 
         self.log("Fitteando y Prediciendo")
         time_log = process_time()
-        clf = self.classifier_klass_constructor(k)
-        clf.fit(x_train, self.Y_train)
+        clf = self.get_classifier(k, alfa, x_train)
         y_pred = clf.predict(x_test)
         end = process_time()
         self.log("listo - elapsed {} segundos en KNN".format(end - time_log))
