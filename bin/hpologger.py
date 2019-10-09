@@ -1,7 +1,7 @@
-#! /usr/bin/env pyhton3
+#!/usr/bin/env python3
 
 '''
-La clase HPOLogger provee 
+La clase HPOLogger provee
 '''
 
 from pathlib import Path
