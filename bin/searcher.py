@@ -102,7 +102,7 @@ class KNNHyperParameters(SearchProblem):
             if alfa in self.memoize_clf:
                 print("Recuperando classifier de memoria!")
                 clf = self.memoize_clf[alfa]
-                clf.setNeightbours(neightbours)
+                clf.setNeightbors(neightbours)
                 return clf
             else:
                 print("Construyendo y Fitteando Classificador")
