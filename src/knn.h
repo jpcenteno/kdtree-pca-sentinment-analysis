@@ -15,8 +15,8 @@ public:
 private:
     double predictVector(const Vector &) const;
 
-    KDTree<double>::Matrix _X;
-    KDTree<double> _kd_tree;
+    KDTreed::Matrix _X;
+    KDTreed _kd_tree;
     Matrix _y;
     unsigned int _neighbors;
 
