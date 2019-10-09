@@ -42,6 +42,8 @@ include_directories(eigen)
 
 add_subdirectory(pybind11)
 
+include_directories(kdtree-eigen)
+
 pybind11_add_module(sentiment
                     src/sentiment.cpp
                     src/knn.cpp
