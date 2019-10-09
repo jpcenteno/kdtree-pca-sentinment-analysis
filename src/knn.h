@@ -15,7 +15,7 @@ public:
 private:
     double predictVector(const Vector &) const;
 
-    SparseMatrix _X;
+    KDTree<double>::Matrix _X;
     KDTree<double> _kd_tree;
     Matrix _y;
     unsigned int _neighbors;

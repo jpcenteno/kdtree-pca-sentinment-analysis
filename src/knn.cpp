@@ -13,9 +13,8 @@ KNNClassifier::KNNClassifier(unsigned int n_neighbors) : _neighbors(n_neighbors)
 
 void KNNClassifier::fit(SparseMatrix X, Matrix y)
 {
-    _X = X;
-    KDTreed kdtree(X);
-    _kd_tree = kdtree; // copia?
+    _X = X.toDense().transpose(); // cada columna es un dato
+    _kd_tree.setData(_X);
     _kd_tree.build();
     _y = y;
 }
@@ -30,7 +29,9 @@ Vector KNNClassifier::predict(SparseMatrix X)
     {
         ret(k) = predictVector(X.row(k));
     }
-
+    #ifdef LLVL1
+    cout << "predijimos todos!" << endl;
+    #endif
     return ret;
 }
 
@@ -38,6 +39,10 @@ double KNNClassifier::predictVector(const Vector &testVector) const{
 
     KDTreed::Matrix dists; // basically Eigen::MatrixXd
     KDTreed::MatrixI idx;  // basically Eigen::Matrix<Eigen::Index>
+    #ifdef LLVL1
+    cout << "test : " << testVector.rows() << " " << testVector.cols() << endl;
+    cout << "model: " << _X.rows() << " " << _X.cols() << endl;
+    #endif
     _kd_tree.query(testVector, _neighbors, idx, dists);
 
     //get the class that appears more often than the others within the first k elements
