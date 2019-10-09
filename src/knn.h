@@ -1,7 +1,9 @@
 #pragma once
 
+#include "kdtree_eigen.h"
 #include "types.h"
 
+using namespace kdt;
 
 class KNNClassifier {
 public:
@@ -14,6 +16,7 @@ private:
     double predictVector(const Vector &) const;
 
     SparseMatrix _X;
+    KDTree<double> _kd_tree;
     Matrix _y;
     unsigned int _neighbors;
 
