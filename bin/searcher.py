@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from pathlib import Path
 from simpleai.search import SearchProblem
 from simpleai.search.local import hill_climbing
 
@@ -17,6 +18,13 @@ import sentiment
 
 import random
 import math
+
+from hpologger import HPOLogger
+
+# El logger es global. Es un asco, pero era mas facil llamarlo desde
+# KNNHyperParameters que testear todos los llamados a constructor de las
+# subclases.
+hpo_logger = None
 
 ######################################################################
 ###                                                                ###
@@ -168,7 +176,10 @@ class KNNHyperParameters(SearchProblem):
         acc = accuracy_score(self.Y_test, y_pred)
         time = (end - beg) / 60.0
 
+
         score = self._score(time, acc)
+        if hpo_logger:
+            hpo_logger.log(state, acc, time, score)
         self.log("Evaluando: {} => Accuracy: {}, Time: {} minutos, Score: {}".format(state, acc, time, score))
         self.memoize_state[state] = score
         self.search_history.append(state, acc, time, score)
@@ -293,6 +304,7 @@ if __name__ == "__main__":
     parser.add_argument('--out-metadata', type=str, default=None
                         ,help='Path al archivo de salida donde se gaurdará metadata asociada al algoritmo, por ejemplo si se usa grid-beam, la grilla')
     parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None,memoize_pca=True)
+    parser.add_argument('--output-file', type=Path, default=None)
 
     args = parser.parse_args()
 
@@ -352,6 +364,10 @@ if __name__ == "__main__":
             print("Usando sentiment o sklearn sin PCA, dejamos las matrices esparsas")
             X_train, y_train = vectorizer.transform(text_train), (label_train == 'pos').values
             X_test, y_test = vectorizer.transform(text_test), (label_test == 'pos').values
+
+    if args.output_file:
+        hpo_logger = HPOLogger(args.output_file, ['k', 'alpha'])
+
 
     print("Creando Problema")
     knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test
