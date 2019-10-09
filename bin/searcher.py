@@ -102,7 +102,6 @@ class KNNHyperParameters(SearchProblem):
         self.memoize_pca = {} if memoize_pca else None
         self.memoize_clf = {}
         self.memoize_state = {}
-        self.search_history = []
         self.print_log = print_log
 
     def get_classifier(self, neightbours, alfa, x_train):
@@ -182,7 +181,6 @@ class KNNHyperParameters(SearchProblem):
             hpo_logger.log(state, acc, time, score)
         self.log("Evaluando: {} => Accuracy: {}, Time: {} minutos, Score: {}".format(state, acc, time, score))
         self.memoize_state[state] = score
-        self.search_history.append(state, acc, time, score)
         return score
 
     def _score(self, time, acc):
@@ -299,12 +297,11 @@ if __name__ == "__main__":
                         ,help='Porcentaje del data set a utilizar')
     parser.add_argument('--divition-scale', type=int, default=divition_scale_default
                         ,help="La escala en cada dimensión de la grilla de estados iniciales")
-    parser.add_argument('--out-history', type=str, default=None
+    parser.add_argument('--out-history', type=Path, default=None
                         ,help='Path al archivo de salida donde se guardará la historia de la búsqueda')
-    parser.add_argument('--out-metadata', type=str, default=None
+    parser.add_argument('--out-metadata', type=Path, default=None
                         ,help='Path al archivo de salida donde se gaurdará metadata asociada al algoritmo, por ejemplo si se usa grid-beam, la grilla')
     parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None,memoize_pca=True)
-    parser.add_argument('--output-file', type=Path, default=None)
 
     args = parser.parse_args()
 
@@ -365,8 +362,8 @@ if __name__ == "__main__":
             X_train, y_train = vectorizer.transform(text_train), (label_train == 'pos').values
             X_test, y_test = vectorizer.transform(text_test), (label_test == 'pos').values
 
-    if args.output_file:
-        hpo_logger = HPOLogger(args.output_file, ['k', 'alpha'])
+    if args.out_history:
+        hpo_logger = HPOLogger(args.out_history, ['k', 'alpha'])
 
 
     print("Creando Problema")
@@ -397,13 +394,6 @@ if __name__ == "__main__":
         knn_problem = KNNGridDecorator(knn_problem, args.beam_size, args.divition_scale)
         result = beam(knn_problem, viewer=visor, beam_size=args.beam_size, iterations_limit=args.iterations_limit)
         print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
-
-    with open(args.out_history) as history_file:
-        history_file.write("K; PCA; Accuracy; Time; Score;")
-        for row in knn_problem.search_history:
-            state, acc, time, score = row
-            k, alfa = state
-            history_file.write(str(k) + "; " + str(alfa) + "; " + str(acc) + "; " + str(time) + "; " + str(score) + "\n")
 
     if knn_problem.metadata:
         with open(args.out_metadata) as metadata_file:
