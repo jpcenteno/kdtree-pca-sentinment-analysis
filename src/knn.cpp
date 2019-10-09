@@ -11,6 +11,10 @@ KNNClassifier::KNNClassifier(unsigned int n_neighbors) : _neighbors(n_neighbors)
 {
 }
 
+void KNNClassifier::setNeightbors(unsigned int neightbors) {
+    _neighbors = neightbors;
+}
+
 void KNNClassifier::fit(SparseMatrix X, Matrix y)
 {
     _X = X.toDense().transpose(); // cada columna es un dato
@@ -35,7 +39,6 @@ Vector KNNClassifier::predict(SparseMatrix X)
     Vector maxClassVals(classify.cols());
     for (unsigned int i = 0; i < classify.cols(); i++)
         maxClassVals[i] = -1; // TODO ver de usar inicializador
-    cout << "UFA" << endl;
     int maxCounter = -1;
 
     for(unsigned int j = 0; j < classify.cols(); j++){

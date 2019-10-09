@@ -13,6 +13,8 @@ public:
 
     Vector predict(SparseMatrix X);
 
+    void setNeightbors(unsigned int neightbors);
+
 private:
 
     KDTreed::Matrix _X;

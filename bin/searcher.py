@@ -101,7 +101,9 @@ class KNNHyperParameters(SearchProblem):
                 alfa=0
             if alfa in self.memoize_clf:
                 print("Recuperando classifier de memoria!")
-                return self.memoize_clf[alfa]
+                clf = self.memoize_clf[alfa]
+                clf.setNeightbours(neightbours)
+                return clf
             else:
                 print("Construyendo y Fitteando Classificador")
                 clf = self.classifier_klass_constructor(neightbours)
@@ -229,7 +231,7 @@ class KNNGridDecorator(KNNDecorator):
         print("Generando Grilla")
         super().__init__(decorated)
         aspect_ratio = int(decorated.pca_step / decorated.neightbours_step)
-        divitions = int(math.sqrt(seeders))
+        divitions = int(math.sqrt(seeders))+1
         self.grid = []
         for k in range(1, divitions * divition_scale, divition_scale):
             for alpha in range(2, divitions * divition_scale, divition_scale * aspect_ratio):
