@@ -28,10 +28,10 @@ Vector KNNClassifier::predict(SparseMatrix X)
     KDTreed::Matrix classify = X.toDense().transpose();
     KDTreed::Matrix dists; // basically Eigen::MatrixXd
     KDTreed::MatrixI idx;  // basically Eigen::Matrix<Eigen::Index>
-    //#ifdef LLVL1
+    #ifdef LLVL1
     cout << "test : " << classify.rows() << " " << classify.cols() << endl;
     cout << "model: " << _X.rows() << " " << _X.cols() << endl;
-    //#endif
+    #endif
     _kd_tree.query(classify, _neighbors, idx, dists);
 
     //get the class that appears more often than the others within the first k elements
