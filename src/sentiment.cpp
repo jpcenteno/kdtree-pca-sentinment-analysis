@@ -11,7 +11,8 @@ PYBIND11_MODULE(sentiment, m) {
     py::class_<KNNClassifier>(m, "KNNClassifier")
         .def(py::init<unsigned int>())
         .def("fit", &KNNClassifier::fit)
-        .def("predict", &KNNClassifier::predict);
+        .def("predict", &KNNClassifier::predict)
+        .def("setNeightbors", &KNNClassifier::setNeightbors);
 
     py::class_<PCA>(m, "PCA")
         .def(py::init<unsigned int>())
@@ -23,7 +24,7 @@ PYBIND11_MODULE(sentiment, m) {
         "Function that calculates eigenvector",
         py::arg("X"),
         py::arg("num_iter")=5000,
-        py::arg("epsilon")=0.001
+        py::arg("epsilon")=1e-4
     );
     m.def(
         "get_first_eigenvalues", &get_first_eigenvalues,
@@ -31,7 +32,7 @@ PYBIND11_MODULE(sentiment, m) {
         py::arg("X"),
         py::arg("num"),
         py::arg("num_iter")=5000,
-        py::arg("epsilon")=0.001
+        py::arg("epsilon")=1e-4
     );
 
 }
