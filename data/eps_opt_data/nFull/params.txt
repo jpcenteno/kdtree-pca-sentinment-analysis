@@ -1,2 +1,2 @@
-python3 bin/eps_opt.py 20 10 14 
+python3 bin/eps_opt.py 20 20 12
 
