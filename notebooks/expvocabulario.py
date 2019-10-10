@@ -116,7 +116,11 @@ def exp_grid_train_subsample(X_train, y_train, X_test, y_test,
             Tiempo de cpu en segundos para el predict.
     '''
     for ratio, k, alpha in itertools.product(subsampling_ratios, ks, alphas):
-        result = exp_train_subsample(X_train, y_train, X_test, y_test,
-                                     ratio, k=k, alpha=alpha)
-        yield(result)
+        print(f'ratio: {ratio}, k: {k}, alpha: {alpha}')
+        try:
+            result = exp_train_subsample(X_train, y_train, X_test, y_test,
+                                         ratio, k=k, alpha=alpha)
+            yield(result)
+        except ValueError: # YOLO
+            print('Raised valueerror')
 
