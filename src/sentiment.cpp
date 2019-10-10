@@ -22,9 +22,10 @@ PYBIND11_MODULE(sentiment, m) {
         .def("setNeightbors", &KNNClassifier::setNeightbors);
 
     py::class_<PCA>(m, "PCA")
-        .def(py::init<unsigned int, Criterion>())
+        .def(py::init<unsigned int, double, Criterion>())
+        .def(py::init<unsigned int, double>())
         .def(py::init<unsigned int>())
-        .def("fit", &PCA::fit, py::arg("X"), py::arg("eps")=1e-3)
+        .def("fit", &PCA::fit, py::arg("X"))
         .def("transform", &PCA::transform)
         .def("fit_transform", &PCA::fit_transform);
     m.def(
