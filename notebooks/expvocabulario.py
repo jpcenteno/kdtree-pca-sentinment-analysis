@@ -7,9 +7,17 @@ import itertools
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.metrics import accuracy_score
 
+import pathos.multiprocessing as mp
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from knnpca import PCAKneighboursClasifier
 
 from time import process_time
+
+def _repeat(it, n):
+    return itertools.chain.from_iterable(itertools.repeat(it, n))
 
 def exp_train_subsample(X_train, y_train, X_test, y_test, subsampling_ratio,
                         k=100, alpha=100):
@@ -77,7 +85,7 @@ def exp_train_subsample(X_train, y_train, X_test, y_test, subsampling_ratio,
 
 
 def exp_grid_train_subsample(X_train, y_train, X_test, y_test,
-                             subsampling_ratios, ks, alphas):
+                             subsampling_ratios, ks, alphas, n_repeats=5):
     '''
     Computa el accuracy bajo un subsample del conjunto de entrenamiento.
 
@@ -97,6 +105,8 @@ def exp_grid_train_subsample(X_train, y_train, X_test, y_test,
         Hyperparameter de KNN.
     alphas : List[int] en rango {1 ... m}, optional
         Hyperparameter de PCA.
+    n_repeats : int > 0
+        Cantidad de mediciones para el mismo experimento
 
     Returns
     -------
@@ -115,12 +125,29 @@ def exp_grid_train_subsample(X_train, y_train, X_test, y_test,
         time_predict : float
             Tiempo de cpu en segundos para el predict.
     '''
-    for ratio, k, alpha in itertools.product(subsampling_ratios, ks, alphas):
-        print(f'ratio: {ratio}, k: {k}, alpha: {alpha}')
+
+    print('def configurations()')
+
+    def configurations(ratios, ks, alphas, n_repeats):
+        'Iterador que devuelve las configuraciones de parametros a correr.'
+        return _repeat(itertools.product(ratios, ks, alphas), n_repeats)
+
+    print('def wrapper()')
+    def wrapper(params):
+        'Wraper para llamar la funcion en el map'
+        ratio, k, alpha = params
+        print(f'ratio = {ratio}, k = {k}, alpha = {alpha}')
         try:
             result = exp_train_subsample(X_train, y_train, X_test, y_test,
                                          ratio, k=k, alpha=alpha)
-            yield(result)
+            return result
         except ValueError: # YOLO
             print('Raised valueerror')
 
+    with mp.Pool(mp.cpu_count()) as pool:
+        print('gen_configs')
+        confs = list(itertools.product(subsampling_ratios, ks, alphas)) * n_repeats
+        print('computando')
+        results = pool.map(wrapper, confs)
+
+    return itertools.chain(results)
