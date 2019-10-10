@@ -1,3 +1,9 @@
+"""
+grafica la evolucion de precision y tiempo del metodo de la potencia
+
+python eps_opt.py iteraciones_por_rango [opcional: repeticiones_por_epsilon max_exponente_epsilon]
+"""
+
 import sys
 sys.path.append("notebooks/")
 
@@ -52,15 +58,15 @@ def rate(A, crit, eps):
 def avg(l):
     return sum(l)/len(l)
 
-def run_iters(A, iters, crit, eps_iters):
+def run_iters(A, iters, crit, eps_iters, max_exp):
     global crit_benchmarks
 
     print("Criterio: {}".format(crit))
     crit_benchmarks = []
     for i in range(iters+1):
         print("iteracion {}".format(i))
-        # de 1 a 1e-12
-        exp = i*(11)/iters
+        # de 1e0 a 1e-max_exp
+        exp = i*(max_exp)/iters
         eps = 10**(-exp)
         acc_list = []
         time_list = []
@@ -77,41 +83,51 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
 
     if len(sys.argv) < 2:
-        print("Uso: python eps_opt.py iteraciones_por_rango [opcional repeticiones_por_epsilon]")
+        print("Uso: python eps_opt.py iteraciones_por_rango [opcional: repeticiones_por_epsilon  max_exponente_epsilon  sample_size]")
         exit()
 
     rango_iters = int(sys.argv[1])
     eps_iters = int(sys.argv[2]) if len(sys.argv) > 2 is not None else 3
+    max_exp = int(sys.argv[3]) if len(sys.argv) > 2 is not None else 8
 
-    df = pd.read_csv("./data/imdb_small.csv")
+    if True:
+        df = pd.read_csv("./data/imdb_small.csv")
 
-    print("Vectorizando datos...")
+        print("Vectorizando datos...")
 
-    text_train = df[df.type == 'train']["review"]
-    label_train = df[df.type == 'train']["label"]
+        text_train = df[df.type == 'train']["review"]
+        label_train = df[df.type == 'train']["label"]
 
-    vectorizer = CountVectorizer(
-        max_df=0.75, min_df=0.1,
-        max_features=5000, ngram_range=(1, 2),
-    )
+        vectorizer = CountVectorizer(
+            max_df=0.75, min_df=0.1,
+            max_features=5000, ngram_range=(1, 2),
+        )
 
-    vectorizer.fit(text_train)
+        vectorizer.fit(text_train)
 
-    X, y = vectorizer.transform(text_train), (label_train == 'pos').values
+        X, y = vectorizer.transform(text_train), (label_train == 'pos').values
 
-    #recortamos la muestra
-    X = X.toarray()
-    indexes = random.sample([i for i in range(X.shape[0])], 50)
-    X = [X[i,:] for i in indexes]
+        #recortamos la muestra
+        X = X.toarray()
 
-    #numpy nos da la matriz de covarianza
-    A = np.cov(X)
+        sample_size = int(sys.argv[4]) if len(sys.argv) > 4 is not None else X.shape[0]
+        if sample_size > X.shape[0]:
+            print("sample_size muy grande, tiene que ser <= a {}".format(X.shape[0]))
+        print(sample_size)
+        indexes = random.sample([i for i in range(X.shape[0])], sample_size)
+        X = [X[i,:] for i in indexes]
 
-    print("Midiendo parametros...")
-    for crit in crits_to_name:
-        global_benchmarks += run_iters(A, rango_iters, crit, eps_iters)
+        #numpy nos da la matriz de covarianza
+        A = np.cov(X)
 
-    df = pd.DataFrame(global_benchmarks, columns = ["criterio", "exponente", "precision", "tiempo (ticks)"])
+        print("Midiendo parametros...")
+        for crit in crits_to_name:
+            global_benchmarks += run_iters(A, rango_iters, crit, eps_iters, max_exp)
+
+        df = pd.DataFrame(global_benchmarks, columns = ["criterio", "exponente", "precision", "tiempo (ticks)"])
+    else:
+        df = pd.read_csv("corrida/eps_opt_out.csv")
+        df = df.loc[(df['exponente'] < 12)]
 
     def plot(y_col):
         ax = sns.lineplot(x="exponente", y=y_col, hue="criterio", err_style="band", data=df)
