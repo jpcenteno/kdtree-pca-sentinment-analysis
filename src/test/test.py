@@ -61,8 +61,8 @@ def testear_pm_diagonal_3x3():
     A = np.diag([1.,2.,3.])
     A_reversed = np.diag([1.,2.,3.][::-1])
 
-    c1, b1 =  st.power_iteration(A, num_iter=15000)
-    c2, b2 =  st.power_iteration(A_reversed, num_iter=15000)
+    c1, b1 =  st.power_iteration(A, st.Criterion.all, num_iter=15000, epsilon=1e-8)
+    c2, b2 =  st.power_iteration(A_reversed, st.Criterion.all, num_iter=15000, epsilon=1e-8)
 
     # norma 1
     assert(abs(np.linalg.norm(b1)-1) < 1e-4)
@@ -79,8 +79,8 @@ def testear_pm_diagonal_4x4():
     A = np.diag([1.,2.,3.,4.])
     A_reversed = np.diag([1.,2.,3.,4.][::-1])
 
-    c1, b1 =  st.power_iteration(A, num_iter=15000)
-    c2, b2 =  st.power_iteration(A_reversed, num_iter=15000)
+    c1, b1 =  st.power_iteration(A, st.Criterion.all, num_iter=15000, epsilon=1e-8)
+    c2, b2 =  st.power_iteration(A_reversed, st.Criterion.all, num_iter=15000, epsilon=1e-8)
 
     # norma 1
     assert(abs(np.linalg.norm(b1)-1) < 1e-4)
@@ -105,7 +105,7 @@ def testear_pm_diagonalizable_5x5():
 
     A = v @ d @ v.T
     eigenvals, _ = np.linalg.eig(A)
-    c1, b1 =  st.power_iteration(A, num_iter=15000)
+    c1, b1 =  st.power_iteration(A, st.Criterion.all, num_iter=15000, epsilon=1e-8)
 
     # norma 1
     assert(abs(np.linalg.norm(b1)-1) < 1e-15)
@@ -132,7 +132,7 @@ def testear_deflacion_diagonalizable_5x5():
 
     A = v @ d @ v.T
     eigenvals, _ = np.linalg.eig(A)
-    c, b =  st.get_first_eigenvalues(A, 5, num_iter=15000)
+    c, b =  st.get_first_eigenvalues(A, 5, st.Criterion.all, num_iter=15000)
 
     # norma 1
     for i in range(5):
@@ -156,7 +156,7 @@ def testear_deflacion_diagonalizable_6x6():
     ])
     A = v @ d @ v.T
     eigenvals, _ = np.linalg.eig(A)
-    c, b =  st.get_first_eigenvalues(A, 6, num_iter=15000)
+    c, b =  st.get_first_eigenvalues(A, 6, st.Criterion.all, num_iter=15000)
 
     # norma 1
     for i in range(6):
@@ -188,7 +188,7 @@ def testear_pca_knn():
     alpha = 5
     pca = st.PCA(alpha)
 
-    pca.fit(X)
+    pca.fit(X, 0.0001)
     X_trans = pca.transform(X)
 
     clf = st.KNNClassifier(1)
