@@ -176,7 +176,6 @@ class KNNHyperParameters(SearchProblem):
         acc = accuracy_score(self.Y_test, y_pred)
         time = (end - beg) / 60.0
 
-
         score = self._score(time, acc)
         if hpo_logger:
             hpo_logger.log(state, acc, time, score)
@@ -261,6 +260,44 @@ class KNNGridDecorator(KNNDecorator):
         self.metadata.append(point)
         return point
 
+
+def sort_dataset(data_set, data_set_cut):
+    text_train = df[df.type == 'train']["review"]
+    label_train = df[df.type == 'train']["label"]
+    text_test = df[df.type == 'test']["review"]
+    label_test = df[df.type == 'test']["label"]
+
+    if args.data_set_cut:
+        print("Achicando dataset al {}".format(data_set))
+        text_train = text_train[:int(len(text_train)*data_set_cut)]
+        print(len(text_train))
+        label_train = label_train[:int(len(label_train)*data_set_cut)]
+        text_test = text_test[:int(len(text_test)*data_set_cut)]
+        label_test = label_test[:int(len(label_test)*data_set_cut)]
+
+    print("Class balance : {} pos {} neg".format(
+    (label_train == 'pos').sum() / label_train.shape[0],
+    (label_train == 'neg').sum() / label_train.shape[0]))
+
+    return text_train, label_train, text_test, label_test
+
+
+def create_vectorizer(dataset_path):
+    import re
+    import math
+
+    d={}
+    reg=',|\n|;|\.| '
+    with open(dataset_path) as data:
+        for word in re.split(reg, str(data.readlines())):
+            d[word]=1
+
+    vocabulary = int(math.sqrt(sum(d.values())))*3
+
+    from sklearn.feature_extraction.text import CountVectorizer
+    return CountVectorizer(max_df=0.85, min_df=0.01, max_features=min(vocabulary,5000))
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Hacer alguna busqueda local sobre los hiperparámetros de KNN.')
@@ -304,7 +341,9 @@ if __name__ == "__main__":
                         ,help='Path al archivo de salida donde se guardará la historia de la búsqueda')
     parser.add_argument('--out-metadata', type=Path, default=None
                         ,help='Path al archivo de salida donde se gaurdará metadata asociada al algoritmo, por ejemplo si se usa grid-beam, la grilla')
-    parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None,memoize_pca=True)
+    parser.add_argument('--like-classify', dest='like-classify', action='store_true'
+                        ,help='usa imbd_small y test_sample.true con los mismos parámetros que el classify')
+    parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None,memoize_pca=True,like_classify=False)
 
     args = parser.parse_args()
     p = Path()
@@ -317,7 +356,10 @@ if __name__ == "__main__":
     file_suffix += '_a-step:' + str(args.alpha_step)
     if str(args.implementation) in ["beam", "grid-beam"]:
         file_suffix += "_beam-size:" + str(args.beam_size)
-    file_suffix += '_' + str(args.data_set.parts[-1])
+    if args.like_classify:
+        file_suffix += '_' + "like-classify.csv"
+    else:
+        file_suffix += '_' + str(args.data_set.parts[-1])
 
     if not args.out_history:
         args.out_history="history_" + file_suffix
@@ -334,37 +376,9 @@ if __name__ == "__main__":
 
     print("Cantidad de documentos totales en el dataset: {}".format(df.shape[0]))
 
-    text_train = df[df.type == 'train']["review"]
-    label_train = df[df.type == 'train']["label"]
-    text_test = df[df.type == 'test']["review"]
-    label_test = df[df.type == 'test']["label"]
+    text_train, label_train, text_test, label_test = sort_dataset(args.data_set, args.data_set_cut)
 
-    if args.data_set_cut:
-        print("Achicando dataset al {}".format(args.data_set))
-        text_train = text_train[:int(len(text_train)*args.data_set_cut)]
-        print(len(text_train))
-        label_train = label_train[:int(len(label_train)*args.data_set_cut)]
-        text_test = text_test[:int(len(text_test)*args.data_set_cut)]
-        label_test = label_test[:int(len(label_test)*args.data_set_cut)]
-
-    print("Class balance : {} pos {} neg".format(
-    (label_train == 'pos').sum() / label_train.shape[0],
-    (label_train == 'neg').sum() / label_train.shape[0]))
-    from sklearn.feature_extraction.text import CountVectorizer
-
-    import re
-    import math
-
-    d={}
-    reg=',|\n|;|\.| '
-    with open("../data/imdb_small.csv") as data:
-        for word in re.split(reg, str(data.readlines())):
-            d[word]=1
-
-    vocabulary = int(math.sqrt(sum(d.values())))*3
-
-    vectorizer = CountVectorizer(max_df=0.85, min_df=0.01, max_features=min(vocabulary,5000))
-
+    vectorizer = create_vectorizer(args.data_set)
     vectorizer.fit(text_train)
     # ENDCHORIPASTEO
 
