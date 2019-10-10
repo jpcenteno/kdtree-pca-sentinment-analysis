@@ -246,13 +246,13 @@ class KNNGridDecorator(KNNDecorator):
     def __init__(self, decorated, seeders, divition_scale):
         print("Generando Grilla")
         super().__init__(decorated)
-        aspect_ratio = int(decorated.pca_step / decorated.neightbours_step)
+        aspect_ratio = decorated.pca_step / decorated.neightbours_step
         divitions = int(math.sqrt(seeders))+1
         self.grid = []
         for k in range(1, divitions * divition_scale, divition_scale):
-            for alpha in range(2, divitions * divition_scale, divition_scale * aspect_ratio):
+            for alpha in range(2, divitions * divition_scale, int(divition_scale * aspect_ratio)):
                 self.grid.append((k, alpha))
-        self.metadata = [] # tendrá los valorse de la grilla en el orden de popeo
+        self.metadata = [] # tendrá los valores de la grilla en el orden de popeo
 
     def generate_random_state(self):
         print("Devolviendo algún valor de la grilla")
@@ -352,7 +352,18 @@ if __name__ == "__main__":
     (label_train == 'neg').sum() / label_train.shape[0]))
     from sklearn.feature_extraction.text import CountVectorizer
 
-    vectorizer = CountVectorizer(max_df=0.90, min_df=0.01, max_features=5000)
+    import re
+    import math
+
+    d={}
+    reg=',|\n|;|\.| '
+    with open("../data/imdb_small.csv") as data:
+        for word in re.split(reg, str(data.readlines())):
+            d[word]=1
+
+    vocabulary = int(math.sqrt(sum(d.values())))*3
+
+    vectorizer = CountVectorizer(max_df=0.85, min_df=0.01, max_features=min(vocabulary,5000))
 
     vectorizer.fit(text_train)
     # ENDCHORIPASTEO

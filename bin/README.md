@@ -16,3 +16,8 @@ lo mismo pero sin usar PCA
 ```
 
 ... and so on ...
+
+
+algunos para considerar
+
+./searcher.py --algorithm grid-beam -k 400 --alpha 100 --k-step 40 --alpha-step 10 --beam-size 10 --divition-scale 80 sentiment
