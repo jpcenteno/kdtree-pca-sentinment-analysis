@@ -37,6 +37,7 @@ dataset_true_default=Path("../data/test_sample.true")
 initial_neightbours_default=100
 neightbours_step_default=2
 pca_step_default=2
+pca_eps_default=1e-6
 # ver KNNGridDecorator para entender que es divition_scale
 divition_scale_default=16
 print_log_default=True
@@ -57,7 +58,7 @@ class KNNHyperParameters(SearchProblem):
                  ,neightbours_step = neightbours_step_default
                  ,pca_step = pca_step_default
                  ,initial_neightbours=initial_neightbours_default
-                 ,initial_pca = None
+                 ,initial_pca = None, pca_eps = pca_eps_default
                  ,usar_pca=usar_pca_default, memoize_pca = True, print_log=print_log_default):
 
         """Recibe conjuntos de entrenamiento y testeo y dos strings
@@ -87,9 +88,9 @@ class KNNHyperParameters(SearchProblem):
             self.classifier_klass_constructor = sentiment.KNNClassifier
 
         if pca_from == "sklearn":
-            self.pca_klass_constructor = lambda a: PCA(n_components=a)
+            self.pca_klass_constructor = lambda a: PCA(n_components=a, tol=pca_eps)
         else:
-            self.pca_klass_constructor = lambda a: sentiment.PCA(a)
+            self.pca_klass_constructor = lambda a: sentiment.PCA(a, pca_eps)
 
         self.X_train = X_train
         self.Y_train = Y_train
@@ -101,6 +102,7 @@ class KNNHyperParameters(SearchProblem):
         self.time_penalization = time_penalization
 
         self.usar_pca = usar_pca
+        self.pca_eps = pca_eps
         self.memoize_pca = {} if memoize_pca else None
         self.memoize_clf = {}
         self.memoize_state = {}
@@ -382,6 +384,8 @@ if __name__ == "__main__":
     parser.add_argument('--like-classify', dest='like_classify', action='store_true'
                         ,help='usa imbd_small y test_sample.true con los mismos parámetros que el classify')
     parser.add_argument('--vectorizer', choices=["like-classify", "5000", "sqrt-tokens"], default="5000")
+    parser.add_argument('--ep', default=pca_eps_default
+                        ,help='Tolerancia para el power method')
     parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None,memoize_pca=True,like_classify=False)
 
     args = parser.parse_args()
