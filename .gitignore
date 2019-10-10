@@ -135,7 +135,13 @@ cmake-build-release
 
 # Otros
 data/*
-doc/*## Core latex/pdflatex auxiliary files:
+doc/*pdf
+doc/*
+ASM
+dataset.pdf
+wget-log
+
+## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
 *.log
@@ -399,4 +405,4 @@ TSWLatexianTemp*
 *.sta
 
 # Generated files
-.pdf
+.
