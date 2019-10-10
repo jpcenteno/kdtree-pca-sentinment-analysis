@@ -31,7 +31,9 @@ hpo_logger = None
 ###      Algunos valores por defecto, para la clase y el main      ###
 ###                                                                ###
 ######################################################################
-dataset_default="../data/imdb_small.csv"
+dataset_train_default=Path("../data/imdb_small.csv")
+dataset_test_default=Path("../data/test_sample.csv")
+dataset_true_default=Path("../data/test_sample.true")
 initial_neightbours_default=100
 neightbours_step_default=2
 pca_step_default=2
@@ -58,7 +60,7 @@ class KNNHyperParameters(SearchProblem):
                  ,initial_pca = None
                  ,usar_pca=usar_pca_default, memoize_pca = True, print_log=print_log_default):
 
-        """Recibe conjuntos de entreamiento y testeo y dos strings
+        """Recibe conjuntos de entrenamiento y testeo y dos strings
         classifier_from y pca_from, que pueden ser sentiment si se usa
         la librería en C++, o sklearn, si se usa ese framework de
         python.
@@ -260,15 +262,39 @@ class KNNGridDecorator(KNNDecorator):
         self.metadata.append(point)
         return point
 
-
-def sort_dataset(data_set, data_set_cut):
+def sort_dataset_like_classify(df, df_test, _):
+    """
+    Casi choripasteado de classify, la única diferencia es que no uso ids_test; el label_test lo saco del evaluate.py
+    Si bien recive un DF de entrenamiento, siempre usa imbd_small
+    """
     text_train = df[df.type == 'train']["review"]
     label_train = df[df.type == 'train']["label"]
-    text_test = df[df.type == 'test']["review"]
-    label_test = df[df.type == 'test']["label"]
+
+    text_test = df_test["review"]
+
+    df_true = pd.read_csv("../data/test_sample.true")
+    label_test = df_true["label"] # es el true
+    #ids_test = df_test["id"]
+
+    return text_train, label_train, text_test, label_test
+
+def create_vectorizer_like_classify(text_train):
+    vectorizer = CountVectorizer(
+        max_df=0.85, min_df=0.01,
+        max_features=5000, ngram_range=(1, 2),
+    )
+
+    vectorizer.fit(text_train)
+    return vectorizer
+
+def sort_dataset(df, df_test, data_set_cut):
+    text_train = df[df.type == 'train']["review"]
+    label_train = df[df.type == 'train']["label"]
+    text_test = df_test[df.type == 'test']["review"]
+    label_test = df_test[df.type == 'test']["label"]
 
     if args.data_set_cut:
-        print("Achicando dataset al {}".format(data_set))
+        print("Achicando dataset al {}".format(data_set_cut))
         text_train = text_train[:int(len(text_train)*data_set_cut)]
         print(len(text_train))
         label_train = label_train[:int(len(label_train)*data_set_cut)]
@@ -282,20 +308,22 @@ def sort_dataset(data_set, data_set_cut):
     return text_train, label_train, text_test, label_test
 
 
-def create_vectorizer(dataset_path):
+def create_vectorizer(text_train):
     import re
     import math
 
     d={}
     reg=',|\n|;|\.| '
-    with open(dataset_path) as data:
-        for word in re.split(reg, str(data.readlines())):
+    for idx in text_train.keys():
+        for word in re.split(reg, str(text_train[idx])):
             d[word]=1
 
     vocabulary = int(math.sqrt(sum(d.values())))*3
 
-    from sklearn.feature_extraction.text import CountVectorizer
-    return CountVectorizer(max_df=0.85, min_df=0.01, max_features=min(vocabulary,5000))
+    vectorizer = CountVectorizer(max_df=0.85, min_df=0.01, max_features=min(vocabulary,5000))
+    vectorizer.fit(text_train)
+
+    return vectorizer
 
 
 if __name__ == "__main__":
@@ -317,8 +345,10 @@ if __name__ == "__main__":
                         ,help='Indica que se usará PCA')
     parser.add_argument('--not-use-pca', dest='use_pca', action='store_false'
                         ,help='Indica que NO se usará PCA')
-    parser.add_argument('--data-set', type=Path, default=dataset_default
-                        ,help='path del dataset, puede ser relativo descomprimido - por defecto usa ../../data/imdb_small.csv')
+    parser.add_argument('--data-set-train', type=Path, default=dataset_train_default
+                        ,help='Path del dataset de entrenamiento, puede ser relativo descomprimido - por defecto usa ../../data/imdb_small.csv')
+    parser.add_argument('--data-set-test', type=Path, default=dataset_test_default
+                        ,help='Path del dataset para hacer predicciones')
     parser.add_argument('--algorithm', choices=["hill-climbing", "beam", "grid-beam"], default="hill_climbing"
                         ,help='El algoritmo a usar para la búsqueda')
     parser.add_argument('--beam-size', type=int, default=beam_size_default
@@ -341,11 +371,13 @@ if __name__ == "__main__":
                         ,help='Path al archivo de salida donde se guardará la historia de la búsqueda')
     parser.add_argument('--out-metadata', type=Path, default=None
                         ,help='Path al archivo de salida donde se gaurdará metadata asociada al algoritmo, por ejemplo si se usa grid-beam, la grilla')
-    parser.add_argument('--like-classify', dest='like-classify', action='store_true'
+    parser.add_argument('--like-classify', dest='like_classify', action='store_true'
                         ,help='usa imbd_small y test_sample.true con los mismos parámetros que el classify')
     parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None,memoize_pca=True,like_classify=False)
 
     args = parser.parse_args()
+    print(args)
+
     p = Path()
 
     file_suffix = str(args.algorithm)
@@ -359,7 +391,8 @@ if __name__ == "__main__":
     if args.like_classify:
         file_suffix += '_' + "like-classify.csv"
     else:
-        file_suffix += '_' + str(args.data_set.parts[-1])
+        file_suffix += '_train:' + str(args.data_set_train.parts[-1])
+        file_suffix += '_test:' + str(args.data_set_test.parts[-1])
 
     if not args.out_history:
         args.out_history="history_" + file_suffix
@@ -372,17 +405,27 @@ if __name__ == "__main__":
     #!cd ../../data && tar -xvf *.tgz
     #!cd ../../data && tar -xvf *.tar.gz
 
-    df = pd.read_csv(args.data_set, index_col=0)
+    df = pd.read_csv(args.data_set_train, index_col=0)
+    df_test = pd.read_csv(args.data_set_test, index_col=0)
 
     print("Cantidad de documentos totales en el dataset: {}".format(df.shape[0]))
 
-    text_train, label_train, text_test, label_test = sort_dataset(args.data_set, args.data_set_cut)
+    from sklearn.feature_extraction.text import CountVectorizer
+    if args.like_classify:
+        print("Corriendo como classify")
+        if not args.data_set_test == dataset_test_default:
+            raise Exception("El dataset de test tiene que ser test_sample.csv, el default")
+        text_train, label_train, text_test, label_test = sort_dataset_like_classify(df, df_test, args.data_set_cut)
+        vectorizer = create_vectorizer_like_classify(text_train)
+    else:
+        text_train, label_train, text_test, label_test = sort_dataset(df, df_test, args.data_set_cut)
+        vectorizer = create_vectorizer(text_train)
 
-    vectorizer = create_vectorizer(args.data_set)
-    vectorizer.fit(text_train)
+    print("Cantidad de instancias de entrenamiento = {}".format(len(text_train)))
+    print("Cantidad de instancias de test = {}".format(len(text_test)))
+
     # ENDCHORIPASTEO
 
-    print(args)
     if args.use_sparse_override == True:
         print("Alimentando PCA y KNN con matrices ralas forzozamente")
         X_train, y_train = vectorizer.transform(text_train), (label_train == 'pos').values
