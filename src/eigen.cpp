@@ -2,12 +2,15 @@
 #include <chrono>
 #include <iostream>
 #include "eigen.h"
+#include <math.h>
 
 using namespace std;
 
 
 pair<double, Vector> power_iteration(const Matrix& A,  Criterion crit, unsigned num_iter, double eps)
 {
+    //comparamos cuadrados de normas porque es más barato
+    eps = pow(eps, 2.0);
     Vector v = Vector::Random(A.cols());
     double lambda = 0;
     Vector Av = A*v;
@@ -33,14 +36,14 @@ pair<double, Vector> power_iteration(const Matrix& A,  Criterion crit, unsigned 
                 break;
             }
             residual = Av - lambda*v;
-            if (crit != eigenvalues && (residual).norm() < eps) {
+            if (crit != eigenvalues && (residual).squaredNorm() < eps) {
                 #ifdef LLVL1
                 std::cout << "[c3] corta PM por diferencia residual en iteración: " << i+1 << "/" << num_iter << '\n';
                 #endif
                 break;
             }
         }
-        if ((crit == all || crit == eigenvectors) && (prev_v-v).norm() < eps) {
+        if ((crit == all || crit == eigenvectors) && (prev_v-v).squaredNorm() < eps) {
             #ifdef LLVL1
             std::cout << "[c1] corta PM por diferencia entre autovectores en iteración: " << i+1 << "/" << num_iter << '\n';
             #endif
@@ -64,6 +67,7 @@ pair<Vector, Matrix> get_first_eigenvalues(const Matrix& X, unsigned num, Criter
     for(unsigned i = 0; i < num; ++i){
         #ifdef LLVL1
         std::cout << "i / num: " << i+1 << " / " << num << '\n';
+        #endif
         auto eigvalue_vector = power_iteration(A, crit, num_iter, epsilon);
         eigvalues(i) = eigvalue_vector.first;
         eigvectors.col(i) = eigvalue_vector.second;

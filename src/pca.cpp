@@ -15,10 +15,10 @@ PCA::PCA(unsigned int n_components) : _nComponents(n_components)
     _crit = all;
 }
 
-void PCA::fit(SparseMatrix X)
+void PCA::fit(SparseMatrix X, double eps)
 {
     _covMatrix = getCovariance(X);
-    _eigenvalues_vectors = get_first_eigenvalues(_covMatrix, _nComponents, _crit);
+    _eigenvalues_vectors = get_first_eigenvalues(_covMatrix, _nComponents, _crit, 5000, eps);
 }
 
 MatrixXd PCA::transform(SparseMatrix X)
