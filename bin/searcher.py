@@ -401,10 +401,10 @@ if __name__ == "__main__":
     file_suffix += '_a-step:' + str(args.alpha_step)
     if str(args.implementation) in ["beam", "grid-beam"]:
         file_suffix += "_beam-size:" + str(args.beam_size)
-    file_suffix += '_vecto:' + args.vectorizer
     if args.like_classify:
         file_suffix += '_' + "like-classify.csv"
     else:
+        file_suffix += '_vecto:' + args.vectorizer
         file_suffix += '_train:' + str(args.data_set_train.parts[-1])
         file_suffix += '_test:' + str(args.data_set_test.parts[-1])
 
