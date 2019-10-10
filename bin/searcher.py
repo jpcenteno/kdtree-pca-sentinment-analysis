@@ -278,15 +278,6 @@ def sort_dataset_like_classify(df, df_test, _):
 
     return text_train, label_train, text_test, label_test
 
-def create_vectorizer_like_classify(text_train):
-    vectorizer = CountVectorizer(
-        max_df=0.85, min_df=0.01,
-        max_features=5000, ngram_range=(1, 2),
-    )
-
-    vectorizer.fit(text_train)
-    return vectorizer
-
 def sort_dataset(df, df_test, data_set_cut):
     text_train = df[df.type == 'train']["review"]
     label_train = df[df.type == 'train']["label"]
@@ -307,8 +298,24 @@ def sort_dataset(df, df_test, data_set_cut):
 
     return text_train, label_train, text_test, label_test
 
+create_vectorizer_dispatcher = {}
+def create_vectorizer_like_classify(text_train):
+    vectorizer = CountVectorizer(
+        max_df=0.85, min_df=0.01,
+        max_features=5000, ngram_range=(1, 2),
+    )
 
-def create_vectorizer(text_train):
+    vectorizer.fit(text_train)
+    return vectorizer
+create_vectorizer_dispatcher["like-classify"] = create_vectorizer_like_classify
+
+def create_vectorizer_5000(text_train):
+    vectorizer = CountVectorizer(max_df=0.85, min_df=0.01, max_features=5000)
+    vectorizer.fit(text_train)
+    return vectorizer
+create_vectorizer_dispatcher["5000"] = create_vectorizer_5000
+
+def create_vectorizer_sqrt(text_train):
     import re
     import math
 
@@ -324,7 +331,7 @@ def create_vectorizer(text_train):
     vectorizer.fit(text_train)
 
     return vectorizer
-
+create_vectorizer_dispatcher["sqrt-tokens"] = create_vectorizer_sqrt
 
 if __name__ == "__main__":
     import argparse
@@ -373,10 +380,11 @@ if __name__ == "__main__":
                         ,help='Path al archivo de salida donde se gaurdará metadata asociada al algoritmo, por ejemplo si se usa grid-beam, la grilla')
     parser.add_argument('--like-classify', dest='like_classify', action='store_true'
                         ,help='usa imbd_small y test_sample.true con los mismos parámetros que el classify')
+    parser.add_argument('--vectorizer', choices=["like-classify", "5000", "sqrt-tokens"], default="5000")
     parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None,memoize_pca=True,like_classify=False)
 
     args = parser.parse_args()
-    print(args)
+    #print(args)
 
     p = Path()
 
@@ -388,6 +396,7 @@ if __name__ == "__main__":
     file_suffix += '_a-step:' + str(args.alpha_step)
     if str(args.implementation) in ["beam", "grid-beam"]:
         file_suffix += "_beam-size:" + str(args.beam_size)
+    file_suffix += '_vecto:' + args.vectorizer
     if args.like_classify:
         file_suffix += '_' + "like-classify.csv"
     else:
@@ -416,10 +425,13 @@ if __name__ == "__main__":
         if not args.data_set_test == dataset_test_default:
             raise Exception("El dataset de test tiene que ser test_sample.csv, el default")
         text_train, label_train, text_test, label_test = sort_dataset_like_classify(df, df_test, args.data_set_cut)
-        vectorizer = create_vectorizer_like_classify(text_train)
+        vectorizer = create_vectorizer_dispatcher["like-classify"](text_train)
     else:
+        if args.data_set_test == dataset_test_default:
+            print("No se aclaró set de test, usando el mismo de training y separando por etiquetas")
+            df_test = df
         text_train, label_train, text_test, label_test = sort_dataset(df, df_test, args.data_set_cut)
-        vectorizer = create_vectorizer(text_train)
+        vectorizer = create_vectorizer_dispatcher[args.vectorizer](text_train)
 
     print("Cantidad de instancias de entrenamiento = {}".format(len(text_train)))
     print("Cantidad de instancias de test = {}".format(len(text_test)))
