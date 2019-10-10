@@ -157,8 +157,9 @@ class KNNHyperParameters(SearchProblem):
                 print("Calculando (PCA)")
                 time_log = process_time()
                 pca = self.pca_klass_constructor(alfa)
-                x_train = pca.fit_transform(self.X_train)
-                x_test = pca.fit_transform(self.X_test)
+                pca.fit(self.X_train)
+                x_train = pca.transform(self.X_train)
+                x_test = pca.transform(self.X_test)
                 self.log("listo - elapsed {} segundos en PCA".format(process_time() - time_log))
                 if not self.memoize_pca == None:
                     print("Guardando memoizacion (PCA)")
