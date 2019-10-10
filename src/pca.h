@@ -3,11 +3,12 @@
 
 class PCA {
 public:
-    PCA(unsigned int n_components, Criterion crit);
+    PCA(unsigned int n_components, double eps, Criterion crit);
+    PCA(unsigned int n_components, double eps);
     PCA(unsigned int n_components);
 
     // TODO: pasar a SparseMatrix - Este Seguro que es el problema
-    void fit(SparseMatrix X, double eps=0.001);
+    void fit(SparseMatrix X);
 
     Eigen::MatrixXd transform(SparseMatrix X);
 
@@ -20,5 +21,6 @@ private:
     unsigned int _nComponents;
     std::pair<Vector, Matrix> _eigenvalues_vectors;
     Matrix _covMatrix;
+    double _eps;
     Criterion _crit;
 };

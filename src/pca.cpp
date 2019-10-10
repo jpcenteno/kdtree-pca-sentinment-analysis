@@ -4,21 +4,19 @@
 
 using namespace std;
 
+PCA::PCA(unsigned int n_components, double eps, Criterion crit)
+    : _nComponents(n_components), _eps(eps), _crit(crit) {}
 
-PCA::PCA(unsigned int n_components, Criterion crit) : _nComponents(n_components), _crit(crit)
-{
+PCA::PCA(unsigned int n_components, double eps)
+    : _nComponents(n_components), _eps(eps),  _crit(all) {}
 
-}
+PCA::PCA(unsigned int n_components)
+    : _nComponents(n_components), _eps(1e-6), _crit(all){}
 
-PCA::PCA(unsigned int n_components) : _nComponents(n_components)
-{
-    _crit = all;
-}
-
-void PCA::fit(SparseMatrix X, double eps)
+void PCA::fit(SparseMatrix X)
 {
     _covMatrix = getCovariance(X);
-    _eigenvalues_vectors = get_first_eigenvalues(_covMatrix, _nComponents, _crit, 5000, eps);
+    _eigenvalues_vectors = get_first_eigenvalues(_covMatrix, _nComponents, _crit, 5000, _eps);
 }
 
 MatrixXd PCA::transform(SparseMatrix X)
