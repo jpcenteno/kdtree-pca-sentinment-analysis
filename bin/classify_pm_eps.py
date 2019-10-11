@@ -1,4 +1,5 @@
 """
+script para comparar resultados de PCA entre dos exponentes y criterios de metodo de la potencia 
 
 python3 bin/classify_pm_eps.py data/test_sample.csv test_sample
 python3 bin/evaluate.py data/test_sample_<resto>.out data/test_sample.true

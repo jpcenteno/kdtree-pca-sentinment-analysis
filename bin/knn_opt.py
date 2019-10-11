@@ -1,3 +1,7 @@
+"""
+grafica la precision de knn de scikitlearn con k variable 
+"""
+
 import sys
 import pandas as pd
 import numpy as np
