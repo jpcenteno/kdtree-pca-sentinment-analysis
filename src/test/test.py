@@ -132,14 +132,14 @@ def testear_deflacion_diagonalizable_5x5():
 
     A = v @ d @ v.T
     eigenvals, _ = np.linalg.eig(A)
-    c, b =  st.get_first_eigenvalues(A, 5, st.Criterion.all, num_iter=15000)
+    c, b =  st.get_first_eigenvalues(A, 5, st.Criterion.all, num_iter=15000, epsilon=1e-9)
 
     # norma 1
     for i in range(5):
         assert(abs(np.linalg.norm(b[:,i])-1) < 1e-15)
     # es autovector y autovalor
     for i in range(5):
-        assert(np.allclose(A@b[:,i], c[i]*b[:,i]))
+        assert(np.allclose(A@b[:,i], c[i]*b[:,i], rtol = 1e-4 , atol = 1e-6))
     # es el autovalor más grande
     assert(np.allclose(sorted(eigenvals, reverse=True), c))
 
@@ -156,8 +156,7 @@ def testear_deflacion_diagonalizable_6x6():
     ])
     A = v @ d @ v.T
     eigenvals, _ = np.linalg.eig(A)
-    c, b =  st.get_first_eigenvalues(A, 6, st.Criterion.all, num_iter=15000)
-
+    c, b =  st.get_first_eigenvalues(A, 6, st.Criterion.all, num_iter=15000, epsilon=1e-9)
     # norma 1
     for i in range(6):
         assert(abs(np.linalg.norm(b[:,i])-1) < 1e-15)
@@ -166,6 +165,7 @@ def testear_deflacion_diagonalizable_6x6():
     # es autovector y autovalor
     for i in range(6):
         assert(np.allclose(A@b[:,i], c[i]*b[:,i]))
+
 """
 KNN PCA
 """
@@ -186,9 +186,9 @@ def testear_pca_knn():
     y = [i%2 for i in range(len(X))]
 
     alpha = 5
-    pca = st.PCA(alpha)
+    pca = st.PCA(alpha, 0.0001)
 
-    pca.fit(X, 0.0001)
+    pca.fit(X)
     X_trans = pca.transform(X)
 
     clf = st.KNNClassifier(1)
