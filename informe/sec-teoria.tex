@@ -15,6 +15,7 @@ para estimar el sentimiento subyacente.
 
 % FIXME tirar un ejemplo ilustrativo
 
+
 \subsection{k Nearest Neighbors}%
 \label{sub:k_nearest_neighbors}
 
@@ -53,3 +54,35 @@ FIXME hablar de distintas normas.
 dimensionalidad que transforma los datos de entrada en un espacio de
 \textit{features} correlacionadas a un conjunto de valores cuyas
 \textit{features} no guarden correlación entre sí.
+
+
+Si del conjunto de vectores $\{v_1,..v_n \} \subset \mathds{R}^m$ que
+conseguimos mediante Bag of Words tomamos el vector de medias muestrales
+$\mu = \sum \frac{v_i}{n} \in \mathds{R}^n $ podemos conseguir la matriz
+$X \in \mathds{R}^{m\times n}$
+con filas $\frac{v_i-\mu}{\sqrt{n-1}}$
+podemos construir su \textit{matriz de covarianza} $M=\frac{X^t X}{n-1}$
+de cuya
+descomposición SVD, como para toda matriz $X$ vale que $X^t X$ es simétrica
+con autovalores reales y base ortonormal de autovectores también reales,
+conseguimos una base de autovectores ordenada decrecientemente de acuerdo
+a la varianza interna de cada componente (que se asocia a qué tan grande es su autovalor) y con nula covarianza entre
+sí de modo que un cambio de base con los primeros autovectores pase la matriz a una base con menos ruido entre componentes.
+
+Esto también nos permite recortar los últimos vectores de la base dado que son los que menos información proveen (además de ahorrar tiempo y espacio al considerar menos componentes espaciales en $\knn{}$), que llamermos una \textit{reducción de dimensionalidad} a $\alpha$ cantidad de vectores.
+
+\subsection{Método de la potencia}%
+\label{sub:pm}
+Se trata de un método iterativo que permite hallar los autovalores dominantes de
+una matriz dada (aquellos cuya norma supera al resto) y sus autovectores
+asociados. O sea conseguimos un $\lambda_1$ tal que:
+
+$$ |\lambda_1| > |\lambda_2| \geq ... \geq |\lambda_n| $$
+
+Para todos los autovalores $\lambda_i$ en una matriz de $n\times n$.
+
+La idea es usar este método para conseguir los autovectores de las $\alpha$
+componentes más significativas descriptas en \ref{sub:principal_component_analysis}. Al tratarse
+de un método iterativo que converge asintóticamente tendremos que implementar distintos criterios de parada para dejar de iterar.
+
+Usamos la variante del método de la potencia que se presenta para matrices simétricas (como ya vimos, la matriz de covarianzas cumple tal propiedad) vista en la sección 9.3 del libro de Burden \cite{Burden}.

@@ -4,10 +4,12 @@
 %
 \usepackage[utf8]{inputenc}
 \usepackage[spanish]{babel}
-
+\usepackage{ dsfont }
 \usepackage{caratula/caratula}
 \input{macros.tex}
-
+\usepackage{lmodern}
+\usepackage{amsmath}
+\graphicspath{ {./img} }
 \begin{document}
 
 \input{sec-caratula.tex}
@@ -20,5 +22,17 @@
 \input{sec-teoria.tex}
 \input{sec-experimentacion.tex}
 \input{sec-conclusiones.tex}
+
+\section{Referencias}
+
+\begin{thebibliography}{999}
+
+    \bibitem{Burden}
+      Burden, Richard L. and J. Douglas Faires.
+      \emph{Numerical analysis. Fifth Edition.}
+      Boston: PWS Publishing Company,
+      1993.
+      
+\end{thebibliography}
 
 \end{document}
