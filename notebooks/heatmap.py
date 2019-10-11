@@ -1,3 +1,7 @@
+import matplotlib.pyplot as plt
+import matplotlib
+import numpy as np
+
 def heatmap(data, row_labels, col_labels, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
     """
