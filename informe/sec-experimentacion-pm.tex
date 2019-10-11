@@ -27,44 +27,44 @@ El criterio de diferencia de autovectores nos resultaba interesante, dado que no
 Otro resultado interesante en la misma sección del mismo libro es que, como indican al hablar de aceleración de convergencia, la secuencia $\{\hat{\lambda}^{(k)}\}$ converge, cuando $\lambda_1 > \lambda_2 $ con $\lambda_2$ el más grande (potencialmente no único) de los autovalores no dominantes, linealmente (más específicamente en tasa de convergencia $\mathcal{O}(\lambda_2/\lambda_1)$).
 Inicialmente entendimos mal que esto significaría que la cantidad de iteraciones fuera lineal sobre $\epsilon$ sino que, por el contrario, que la tasa de convergencia sea lineal significa justamente que la sucesión se aproxima de manera lineal a $\lambda_1$ (ver definición en sección del libro \cite{Burden}), lo que implica una convergencia lenta con potencialmente muchas más iteraciones que una secuencia de convergencia, por ejemplo, cuadrática. De hecho, como se puede ver en la tabla 2.7 \cite{Burden}, una secuencia de tales características es potencialmente exponencial incluso.\\
 
-Para experimentar usamos método de la potencia con los 3 criterios de manera separada moviendo con 20 iteraciones (sobre las que se considera promedio y desvio estandar) por valor de $\epsilon$ en un rango de $1$ a $10^{-14}$ (iteramos el exponente $i$ tal que $10^-i=\epsilon$ entre $0$ y $14$), el primer número resultado de una corrida en la que verificamos que el error era muy grosero como para aproximar bien autovectores y el último número resultando de probar a mano y ver que el tiempo que tardaba no lo considerábamos admisible para una ejecución cómdo (teniendo en cuenta que luego en vecinos más cercanos y PCA ibamos a iterar continuas veces el método), buscando un punto intermedio de precisión y latencia aceptables. Para medir el error usamos la inversa (de modo que sea creciente conforme mejor precisión) de la norma del mismo vector residual $|| A v^{(k)} - v^{(k)}\hat{\lambda}^{(k)} ||$ dado que por su naturaleza de medir 'qué tan buenos autovectores y autovalores' son nos resultó más atractiva que la idea de comparar contra librerias como \textit{NumPy}.
+Para experimentar usamos método de la potencia con los 3 criterios de manera separada moviendo con 20 iteraciones (sobre las que se considera promedio y desvio estandar) por valor de $\epsilon$ en un rango de $1$ a $10^{-14}$ (iteramos el exponente $i$ tal que $10^{-i}=\epsilon$ entre $0$ y $14$), el primer número resultado de una corrida en la que verificamos que el error era muy grosero como para aproximar bien autovectores y el último número resultando de probar a mano y ver que el tiempo que tardaba no lo considerábamos admisible para una ejecución cómdo (teniendo en cuenta que luego en vecinos más cercanos y PCA ibamos a iterar continuas veces el método), buscando un punto intermedio de precisión y latencia aceptables. Para medir el error usamos la inversa (de modo que sea creciente conforme mejor precisión) de la norma del mismo vector residual $|| A v^{(k)} - v^{(k)}\hat{\lambda}^{(k)} ||$ dado que por su naturaleza de medir 'qué tan buenos autovectores y autovalores' son nos resultó más atractiva que la idea de comparar contra librerias como \textit{NumPy}.
 
 Inicialmente probamos con un set reducido de 2000 vectores (elegidos aleatoriamente sobre el total) provenientes del dataset \textit{ imdb\_small.csv} sobre los que se arma la matriz de covarianzas para poder determinar si podíamos recortar un poco más el intervalo antes de pasar al dataset entero. Consiguiendo los siguientes resultados:
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{./img/tiempo_2k.png}
 \centering
-\caption{Progresión del tiempo medido en ticks del metodo de la potencia en función del exponente del epsilon para 2000 vectores aleatorios.}
+\caption{Progresión del tiempo medido en ticks del metodo de la potencia en función del exponente del epsilon para 2000 vectores aleatorios.\label{fig:pm_2k_t}}
 \end{figure}
 
-Como se puede ver en la figura () la latencia del criterio vector residual explota desmedidamente a partir del exponente $12$, como el tiempo era demasiado decidimos recortar el rango y mover el exponente solo hasta $12$ antes de pasar a medir con el dataset completo.
+Como se puede ver en la figura \ref{fig:pm_2k_t} la latencia del criterio vector residual explota desmedidamente a partir del exponente $12$, como el tiempo era demasiado decidimos recortar el rango y mover el exponente solo hasta $12$ antes de pasar a medir con el dataset completo.
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{./img/precision_grande_full.png}
 \centering
-\caption{Progresión del tiempo medido en ticks del metodo de la potencia en función del exponente del epsilon para los 6225 vectores del dataset.}
+\caption{Progresión de precisión del metodo de la potencia en función del exponente del epsilon para los 6225 vectores del dataset.\label{fig:pm_g_p}}
 \end{figure}
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{./img/tiempo_grande_full.png}
 \centering
-\caption{Progresión del tiempo medido en ticks del metodo de la potencia en función del exponente del epsilon para 6225 vectores del dataset.}
+\caption{Progresión del tiempo medido en ticks del metodo de la potencia en función del exponente del epsilon para 6225 vectores del dataset.\label{fig:pm_g_t}}
 \end{figure}
 
-Vemos en la figuras () que el criterio de autovalores alcanza precisiones dominantes con menos exponentes que el resto pero se mantiene inestable en variaciones y con media constante antes de que el criterio de vector residual empiece a subir de manera mucho más consistente. El criterio de autovalores recien sobre los últimos exponentes empieza a mostrar una mínima mejora.
+Vemos en la figura \ref{fig:pm_g_p} que el criterio de autovalores alcanza precisiones considerables con menos exponentes que el resto pero se mantiene inestable en variaciones y con media constante antes de que el criterio de vector residual empiece a subir de manera mucho más consistente. El criterio de autovalores recien sobre los últimos exponentes empieza a mostrar una mínima mejora.
 
-El problema de la explosión rápida en precisión del criterio de autovalores es que viene acompañado de una explosión en latencia como indica la figura () y en el caso del criterio de vector residual para el momento en que alcanza una precisión similar al criterio de autovalores la latencia ya es considerable (tener en cuenta que la linealidad en función del exponente significa exponencialidad respecto de epsilon para la latencia). Decidimos entonces, antes de analizar los exponentes mayores a $6$ tras la explosión del criterio de autovalores y en la subida del criterio de autovectores, analizar qué sucede antes del $6$.
+El problema de la explosión rápida en precisión del criterio de autovalores es que viene acompañado de una explosión en latencia como indica la figura \ref{fig:pm_g_t} y en el caso del criterio de vector residual para el momento en que alcanza una precisión similar al criterio de autovalores la latencia ya es considerable (tener en cuenta que la linealidad en función del exponente significa exponencialidad respecto de epsilon para la latencia). Decidimos entonces, antes de analizar los exponentes mayores a $6$ tras la explosión del criterio de autovalores y en la subida del criterio de autovectores, analizar qué sucede antes del $6$.
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{./img/precision_corto_full.png}
 \centering
-\caption{Progresión del tiempo medido en ticks del metodo de la potencia en función del exponente del epsilon para los 6225 vectores del dataset.}
+\caption{Progresión de precisión del metodo de la potencia en función del exponente del epsilon para los 6225 vectores del dataset. \label{fig:pm_c_p}}
 \end{figure}
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{./img/tiempo_corto_full.png}
 \centering
-\caption{Progresión del tiempo medido en ticks del metodo de la potencia en función del exponente del epsilon para 6225 vectores del dataset.}
+\caption{Progresión del tiempo medido en ticks del metodo de la potencia en función del exponente del epsilon para 6225 vectores del dataset. \label{fig:pm_c_t}}
 \end{figure}
 
-Viendo las figuras () y () consideramos que el exponente $6$ era una interesante alternativa dado que tiene en autovalores latencia mucho menor a los exponentes mayores y aun así mostraba una mejora importante de precisión respecto de exponentes menores. Decidimos entonces, antes de pasar a comparar los valores mayores a $6$ la posibilidad de comparar el criterio de autovalores para exponente $6$ contra estos (particularmente $7$, primer valor tras la explosión) en una instancia de PCA con $k$ y $\alpha$ fijos arbitrarios, dado que solamente nos interesa medir qué tan bien funcionan en un caso práctico de PCA (que es la finalidad del método) y ninguno de los dos parámetros favorece a ninguno de los dos exponentes (sí afecta $\alpha$ en cómo se arrastra errores de precisión en el método por cuestiones de deflación, pero penaliza justamente al menos preciso de modo que no nos afecta). Al iterar corridas con tales parámetros y notar que la medida de accuracy era exactamente la misma en ambos casos con tiempos favorables (cerca de la mitad en algunos casos) para el menor exponente decidimos entonces fijar $\epsilon=10^-6$.
+Viendo las figuras \ref{fig:pm_c_t} y \ref{fig:pm_c_p} consideramos que el exponente $6$ era una interesante alternativa dado que tiene en autovalores latencia mucho menor a los exponentes mayores y aun así mostraba una mejora importante de precisión respecto de exponentes menores. Decidimos entonces, antes de pasar a comparar los valores mayores a $6$ la posibilidad de comparar el criterio de autovalores para exponente $6$ contra estos (particularmente $7$, primer valor tras la explosión) en una instancia de PCA con $k$ y $\alpha$ fijos arbitrarios, dado que solamente nos interesa medir qué tan bien funcionan en un caso práctico de PCA (que es la finalidad del método) y ninguno de los dos parámetros favorece a ninguno de los dos exponentes (sí afecta $\alpha$ en cómo se arrastra errores de precisión en el método por cuestiones de deflación, pero penaliza justamente al menos preciso de modo que no nos afecta). Al iterar corridas con tales parámetros y notar que la medida de accuracy era exactamente la misma en ambos casos con tiempos favorables (cerca de la mitad en algunos casos) para el menor exponente decidimos entonces fijar $\epsilon=10^{-6}$.
