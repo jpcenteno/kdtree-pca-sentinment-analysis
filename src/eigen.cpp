@@ -6,15 +6,47 @@
 using namespace std;
 
 
-pair<double, Vector> power_iteration(const Matrix& X, unsigned num_iter, double eps)
+pair<double, Vector> power_iteration(const Matrix& A, unsigned num_iter, double eps)
 {
-    Vector b = Vector::Random(X.cols());
-    double eigenvalue;
-    /***********************
-     * COMPLETAR CODIGO
-     **********************/
+    Vector v = Vector::Random(A.cols());
+    double lambda = 0;
+    Vector Av = A*v;
 
-    return make_pair(eigenvalue, b / b.norm());
+    double prev_lambda = 0;
+    Vector prev_v = Vector(A.cols());
+    Vector residual = Vector(A.cols());
+    for (unsigned i = 0; i < num_iter; ++i)
+    {
+        prev_v = v;
+        v = Av/Av.norm();
+        Av = A*v;
+
+        prev_lambda = lambda;
+        lambda = (v.transpose()*Av);
+        lambda /= v.norm();
+
+        if ((prev_v-v).norm() < eps) {
+            #ifdef LLVL1
+            std::cout << "[c1] corta PM por diferencia entre autovectores en iteración: " << i+1 << "/" << num_iter << '\n';
+            #endif
+            break;
+        }
+        if (std::abs(prev_lambda-lambda) < eps) {
+            #ifdef LLVL1
+            std::cout << "[c2] corta PM por diferencia entre autovalores en iteración: " << i+1 << "/" << num_iter << '\n';
+            #endif
+            break;
+        }
+        residual = Av - lambda*v;
+        if ((residual).norm() < eps) {
+            #ifdef LLVL1
+            std::cout << "[c3] corta PM por diferencia residual en iteración: " << i+1 << "/" << num_iter << '\n';
+            #endif
+            break;
+        }
+    }
+
+    return make_pair(lambda, v);
 }
 
 pair<Vector, Matrix> get_first_eigenvalues(const Matrix& X, unsigned num, unsigned num_iter, double epsilon)
@@ -23,8 +55,15 @@ pair<Vector, Matrix> get_first_eigenvalues(const Matrix& X, unsigned num, unsign
     Vector eigvalues(num);
     Matrix eigvectors(A.rows(), num);
 
-    /***********************
-     * COMPLETAR CODIGO
-     **********************/
+    for(unsigned i = 0; i < num; ++i){
+        #ifdef LLVL1
+        std::cout << "i / num: " << i+1 << " / " << num << '\n';
+        #endif
+        auto eigvalue_vector = power_iteration(A, num_iter, epsilon);
+        eigvalues(i) = eigvalue_vector.first;
+        eigvectors.col(i) = eigvalue_vector.second;
+        A = A - eigvalue_vector.first * eigvalue_vector.second * eigvalue_vector.second.transpose();
+    }
+
     return make_pair(eigvalues, eigvectors);
 }
