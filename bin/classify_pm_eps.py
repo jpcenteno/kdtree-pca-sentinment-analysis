@@ -47,11 +47,11 @@ if __name__ == '__main__':
             paths[exp].append(out_path)
 
             eps = 10**(-exp)
-            pca = PCA(alpha)
+            pca = PCA(alpha, eps)
 
             print("Entrenando PCA")
             t = time.clock()
-            pca.fit(X_train_orig, eps)
+            pca.fit(X_train_orig)
 
             print("Transformando datos")
             X_train = pca.transform(X_train_orig)
