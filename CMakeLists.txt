@@ -34,9 +34,9 @@ ENDIF()
 #set(PYTHON_LIBRARY "/path/to/lib/libpytho.so")
 
 # Prender y apagar este flag para soporte OpenMP
-#set(USE_OpenMP ON)
+set(USE_OpenMP ON)
 # Script cmake ``multi-plataforma`` (testeado en MacOS y Ubuntu)
-#include(cmake/OpenMP.cmake)
+include(cmake/OpenMP.cmake)
 
 include_directories(eigen)
 
@@ -51,7 +51,8 @@ pybind11_add_module(sentiment
                     src/eigen.cpp)
 
 # Por cada módulo que use OpenMP ponerlo como dependencia de esta forma
-#target_link_libraries(sentiment LINK_PUBLIC OpenMP::OpenMP_CXX)
+target_link_libraries(sentiment LINK_PUBLIC OpenMP::OpenMP_CXX)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
 # Esta variable se usa para fijar el directorio de instalación
 set(CMAKE_INSTALL_PREFIX
