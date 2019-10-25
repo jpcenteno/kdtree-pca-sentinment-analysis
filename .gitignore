@@ -1,6 +1,6 @@
 # datasets
-data/*.csv
-data/*.txt
+#data/*.csv
+#data/*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -134,7 +134,7 @@ cmake-build-debug
 cmake-build-release
 
 # Otros
-data/*
+#data/*
 doc/*pdf
 doc/*
 ASM
