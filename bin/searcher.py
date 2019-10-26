@@ -25,6 +25,41 @@ def pca_klass_constructor(impl, pca_eps):
     else:
         return lambda a: sentiment.PCA(a, pca_eps)
 
+def guess_high_alpha(the_grid):
+    alphas = []
+    for (k, a) in the_grid:
+        if a not in alphas:
+            alphas.append(a)
+    alphas.sort()
+    max_alpha = alphas[-1]
+    if len(alphas) > 1:
+        print("alphas: {}".format(alphas))
+        max_alpha += max_alpha - alphas[-2] + args.alpha_step # el ancho de la grilla más el paso
+    return max_alpha
+
+def precalulate_pca(max_alpha, args):
+    print("Precalculando un PCA de {} componentes con {} epsilon".format(max_alpha, args.ep))
+    pca = pca_klass_constructor(max_alpha, args.ep)(max_alpha)
+    pca.fit(X_train)
+    x_train = pca.transform(X_train)
+    x_test = pca.transform(X_test)
+    pca_memoize = {}
+    pca_memoize[max_alpha] = (x_train, x_test)
+    return pca_memoize
+
+def get_pca_db_file_name(train_set, test_set, vecto, alpha):
+    """ TODO: tomar en cuenta el vectoizador y los data sets, por ahora solo toma en cuenta el alpha"""
+    p = Path("pca_db")
+    f = ""
+    for it in p.iterdir():
+        parts = it.name.split("_")
+        f = parts[0]
+        f_alpha = parts[1].split(".")[0]
+        if int(f_alpha) >= alpha:
+            print(f_alpha)
+            return "pca_db/" + "/",  f, f_alpha
+    return "pca_db/", f, None
+
 from hpologger import HPOLogger
 
 ######################################################################
@@ -508,22 +543,14 @@ if __name__ == "__main__":
 
     # diccionario global para que otras celdas aprovechen lo calculado
     if args.memoize_pca:
-        alphas = []
-        for (k, a) in the_grid:
-            if a not in alphas:
-                alphas.append(a)
-        alphas.sort()
-        max_alpha = alphas[-1]
-        if len(alphas) > 1:
-            print("alphas: {}".format(alphas))
-            max_alpha += max_alpha - alphas[-2] + args.alpha_step # el ancho de la grilla más el paso
-        print("Precalculando un PCA de {} componentes con {} epsilon".format(max_alpha, args.ep))
-        pca = pca_klass_constructor(max_alpha, args.ep)(max_alpha)
-        pca.fit(X_train)
-        x_train = pca.transform(X_train)
-        x_test = pca.transform(X_test)
-        pca_memoize = {}
-        pca_memoize[max_alpha] = (x_train, x_test)
+        max_alpha = guess_high_alpha(the_grid)
+        db_dir, file_name_prefix, file_name_alpha = get_pca_db_file_name(
+            args.data_set_train, args.data_set_test, args.vectorizer, max_alpha)
+        if file_name_alpha:
+            pre_memoize = np.loadtxt(db_dir + file_name + file_name_alpha)
+        else :
+            pre_memoize = precalculate_pca(the_grid, args)
+            np.savetxt(file_name + str(max_alpha))
     else:
         pca_memoize = None
 
