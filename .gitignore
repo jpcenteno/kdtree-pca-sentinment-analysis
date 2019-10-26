@@ -128,6 +128,8 @@ CTestTestfile.cmake
 _deps
 .DS_Store
 
+!/Makefile
+
 # Clion project files
 .idea
 cmake-build-debug

@@ -13,7 +13,7 @@ IF(CMAKE_ENABLE_LOG_LVL1 MATCHES "1|[Ss]i|[Yy]es|[Tt]rue")
 ENDIF()
 
 IF(CMAKE_ENABLE_LOG_LVL2 MATCHES "1|[Ss]i|[Yy]es|[Tt]rue")
-  message("Habilitando Log de Funciones de nivel 1")
+  message("Habilitando Log de Funciones de nivel 1 y 2")
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLLVL1 -DLLVL2")
 ENDIF()
 # and so on ... 
