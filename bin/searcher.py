@@ -508,7 +508,6 @@ if __name__ == "__main__":
 
     # diccionario global para que otras celdas aprovechen lo calculado
     if args.memoize_pca:
-        print(the_grid)
         alphas = []
         for (k, a) in the_grid:
             if a not in alphas:
