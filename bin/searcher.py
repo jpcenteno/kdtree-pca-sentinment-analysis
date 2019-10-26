@@ -21,11 +21,6 @@ import math
 
 from hpologger import HPOLogger
 
-# El logger es global. Es un asco, pero era mas facil llamarlo desde
-# KNNHyperParameters que testear todos los llamados a constructor de las
-# subclases.
-hpo_logger = None
-
 ######################################################################
 ###                                                                ###
 ###      Algunos valores por defecto, para la clase y el main      ###
@@ -52,6 +47,29 @@ beam_size_default=10
 
 class KNNHyperParameters(SearchProblem):
 
+    __slots__ = (
+        "initial_pca",
+        "neightbours_step",
+        "pca_step",
+        "classifier_klass_constructor",
+        "pca_klass_constructor",
+        "X_train",
+        "Y_train",
+        "X_test",
+        "Y_test",
+        "min_time",
+        "max_time",
+        "time_penalization",
+        "usar_pca",
+        "pca_eps",
+        "memoize_pca",
+        "memoize_clf",
+        "memoize_state",
+        "print_log",
+        "metadata",
+        "logger"
+    )
+
     def __init__(self, X_train, Y_train, X_test, Y_test
                  ,classifier_from="sentiment", pca_from="sentiment"
                  ,min_time=5, max_time=15, time_penalization=1.2
@@ -59,7 +77,8 @@ class KNNHyperParameters(SearchProblem):
                  ,pca_step = pca_step_default
                  ,initial_neightbours=initial_neightbours_default
                  ,initial_pca = None, pca_eps = pca_eps_default
-                 ,usar_pca=usar_pca_default, memoize_pca = True, print_log=print_log_default):
+                 ,usar_pca=usar_pca_default, memoize_pca = {}, print_log=print_log_default
+                 ,logger=None):
 
         """Recibe conjuntos de entrenamiento y testeo y dos strings
         classifier_from y pca_from, que pueden ser sentiment si se usa
@@ -103,11 +122,13 @@ class KNNHyperParameters(SearchProblem):
 
         self.usar_pca = usar_pca
         self.pca_eps = pca_eps
-        self.memoize_pca = {} if memoize_pca else None
+        self.memoize_pca = memoize_pca
         self.memoize_clf = {}
         self.memoize_state = {}
         self.print_log = print_log
         self.metadata = None
+
+        self.logger = logger
 
     def get_classifier(self, neightbours, alfa, x_train):
         if not self.usar_pca:
@@ -118,10 +139,10 @@ class KNNHyperParameters(SearchProblem):
                 clf = self.memoize_clf[alfa]
                 clf.setNeightbors(neightbours)
                 return clf
-        print("Construyendo y Fitteando Classificador")
-        clf = self.classifier_klass_constructor(neightbours)
-        clf.fit(x_train, self.Y_train)
-        self.memoize_clf[alfa] = clf
+            print("Construyendo y Fitteando Classificador")
+            clf = self.classifier_klass_constructor(neightbours)
+            clf.fit(x_train, self.Y_train)
+            self.memoize_clf[alfa] = clf
         return clf
 
     def actions(self, state):
@@ -141,6 +162,16 @@ class KNNHyperParameters(SearchProblem):
         neigh_step, pca_step = action
         return (k + neigh_step, alfa + pca_step)
 
+    def get_memoized_pca(self, alfa):
+        for (a, data) in self.memoize_pca.items():
+            print ("explorando memoizado: ({}, {})".format(a, data))
+            if a == alfa:
+                return data
+            if a > alfa:
+                x_train, x_test = data
+                return x_train[:,0:alfa], x_test[:,0:alfa]
+        return None
+
     def value(self, state):
         """This method receives a state, and returns a valuation (“score”) of that value. Better states must have higher scores."""
         if state in self.memoize_state:
@@ -152,9 +183,10 @@ class KNNHyperParameters(SearchProblem):
         beg = process_time()
         if self.usar_pca:
             self.log("Transformando datos (PCA)")
-            if alfa in self.memoize_pca:
+            memo_pca = self.get_memoized_pca(alfa)
+            if memo_pca is not None:
                 print("Ya calculado, obteniendo resultado memoizado (PCA)")
-                x_train, x_test = self.memoize_pca[alfa]
+                x_train, x_test = memo_pca
             else:
                 print("Calculando (PCA)")
                 time_log = process_time()
@@ -182,10 +214,11 @@ class KNNHyperParameters(SearchProblem):
         time = (end - beg) / 60.0
 
         score = self._score(time, acc)
-        if hpo_logger:
-            hpo_logger.log(state, acc, time, score)
-        self.log("Evaluando: {} => Accuracy: {}, Time: {} minutos, Score: {}".format(state, acc, time, score))
-        self.memoize_state[state] = score
+        if self.logger:
+            print("logging {} {} {} {}".format(state, acc, time, score))
+            self.logger.log(state, acc, time, score)
+            self.log("Evaluando: {} => Accuracy: {}, Time: {} minutos, Score: {}".format(state, acc, time, score))
+            self.memoize_state[state] = score
         return score
 
     def _score(self, time, acc):
@@ -256,7 +289,7 @@ class KNNGridDecorator(KNNDecorator):
         for k in range(1, divitions * divition_scale, divition_scale):
             for alpha in range(2, divitions * divition_scale, int(divition_scale * aspect_ratio)):
                 self.grid.append((k, alpha))
-        self.metadata = [] # tendrá los valores de la grilla en el orden de popeo
+                self.metadata = [] # tendrá los valores de la grilla en el orden de popeo
 
     def generate_random_state(self):
         print("Devolviendo algún valor de la grilla")
@@ -296,8 +329,8 @@ def sort_dataset(df, df_test, data_set_cut):
         label_test = label_test[:int(len(label_test)*data_set_cut)]
 
     print("Class balance : {} pos {} neg".format(
-    (label_train == 'pos').sum() / label_train.shape[0],
-    (label_train == 'neg').sum() / label_train.shape[0]))
+        (label_train == 'pos').sum() / label_train.shape[0],
+        (label_train == 'neg').sum() / label_train.shape[0]))
 
     return text_train, label_train, text_test, label_test
 
@@ -336,10 +369,28 @@ def create_vectorizer_sqrt(text_train):
     return vectorizer
 create_vectorizer_dispatcher["sqrt-tokens"] = create_vectorizer_sqrt
 
+def file_name_suffix(args):
+    file_suffix = str(args.algorithm)
+    file_suffix += '_' + str(args.implementation)
+    file_suffix += '_k:' + str(args.k)
+    file_suffix += '_a:' + str(args.alpha)
+    file_suffix += '_k-step:' + str(args.k_step)
+    file_suffix += '_a-step:' + str(args.alpha_step)
+    if str(args.implementation) in ["beam", "grid-beam"]:
+        file_suffix += "_beam-size:" + str(args.beam_size)
+    if args.like_classify:
+        file_suffix += '_' + "like-classify.csv"
+    else:
+        file_suffix += '_vecto:' + args.vectorizer
+        file_suffix += '_train:' + str(args.data_set_train.parts[-1])
+        file_suffix += '_test:' + str(args.data_set_test.parts[-1])
+
+    return file_suffix
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Hacer alguna busqueda local sobre los hiperparámetros de KNN.')
-    parser.add_argument('implementation', choices=["sentiment", "sklearn"]
+    parser.add_argument('-imp', '--implementation', choices=["sentiment", "sklearn"]
                         ,help='usar "sentiment" nuestra implementación de KNN y PCA o la de la biblioteca "sklearn"')
     parser.add_argument('-k', type=int, default=initial_neightbours_default
                         ,help='La cantidad inicial de vecinos a considerar - por defecto usa el de la clase')
@@ -380,38 +431,30 @@ if __name__ == "__main__":
     parser.add_argument('--out-history', type=Path, default=None
                         ,help='Path al archivo de salida donde se guardará la historia de la búsqueda')
     parser.add_argument('--out-metadata', type=Path, default=None
-                        ,help='Path al archivo de salida donde se gaurdará metadata asociada al algoritmo, por ejemplo si se usa grid-beam, la grilla')
+                        ,help='Path al archivo de salida donde se guardará metadata asociada al algoritmo, por ejemplo si se usa grid-beam, la grilla')
     parser.add_argument('--like-classify', dest='like_classify', action='store_true'
                         ,help='usa imbd_small y test_sample.true con los mismos parámetros que el classify')
     parser.add_argument('--vectorizer', choices=["like-classify", "5000", "sqrt-tokens"], default="5000")
     parser.add_argument('--ep', default=pca_eps_default
                         ,help='Tolerancia para el power method')
+    parser.add_argument('--grid-k', nargs='+', default=None
+                        ,help='Junto a grid-alpha crea el producto cartesiano con los valores pasados como lista')
+    parser.add_argument('--grid-alpha', nargs='+', default=None
+                        ,help='Junto a grid-a crea el producto cartesiano con los valores pasados como lista')
     parser.set_defaults(use_pca=usar_pca_default,use_sparse_override=None,memoize_pca=True,like_classify=False)
 
     args = parser.parse_args()
-    #print(args)
 
-    p = Path()
+    # armo la grilla
+    if args.grid_alpha is None:
+        args.grid_alpha = [ args.alpha ]
+    if args.grid_k is None:
+        args.grid_k = [ args.grid_k ]
 
-    file_suffix = str(args.algorithm)
-    file_suffix += '_' + str(args.implementation)
-    file_suffix += '_k:' + str(args.k)
-    file_suffix += '_a:' + str(args.alpha)
-    file_suffix += '_k-s:' + str(args.k_step)
-    file_suffix += '_a-step:' + str(args.alpha_step)
-    if str(args.implementation) in ["beam", "grid-beam"]:
-        file_suffix += "_beam-size:" + str(args.beam_size)
-    if args.like_classify:
-        file_suffix += '_' + "like-classify.csv"
-    else:
-        file_suffix += '_vecto:' + args.vectorizer
-        file_suffix += '_train:' + str(args.data_set_train.parts[-1])
-        file_suffix += '_test:' + str(args.data_set_test.parts[-1])
-
-    if not args.out_history:
-        args.out_history="history_" + file_suffix
-    if not args.out_metadata:
-        args.out_metadata="metadata_" + file_suffix
+    the_grid = []
+    for k in args.grid_k:
+        for a in args.grid_alpha:
+            the_grid.append((k, a))
 
     # BEGIN CHORIPASTEO
     import pandas as pd
@@ -435,8 +478,8 @@ if __name__ == "__main__":
         if args.data_set_test == dataset_test_default:
             print("No se aclaró set de test, usando el mismo de training y separando por etiquetas")
             df_test = df
-        text_train, label_train, text_test, label_test = sort_dataset(df, df_test, args.data_set_cut)
-        vectorizer = create_vectorizer_dispatcher[args.vectorizer](text_train)
+            text_train, label_train, text_test, label_test = sort_dataset(df, df_test, args.data_set_cut)
+            vectorizer = create_vectorizer_dispatcher[args.vectorizer](text_train)
 
     print("Cantidad de instancias de entrenamiento = {}".format(len(text_train)))
     print("Cantidad de instancias de test = {}".format(len(text_test)))
@@ -461,45 +504,59 @@ if __name__ == "__main__":
             X_train, y_train = vectorizer.transform(text_train), (label_train == 'pos').values
             X_test, y_test = vectorizer.transform(text_test), (label_test == 'pos').values
 
-    if args.out_history:
-        hpo_logger = HPOLogger(args.out_history, ['k', 'alpha'])
+    # diccionario global para que otras celdas aprovechen lo calculado
+    pca_memoize = {} if args.memoize_pca else None
 
+    # este genera una instancia de problema por grilla
+    for (k, a) in the_grid:
+        args.k = int(k)
+        args.alpha = int(a)
+        file_suffix = file_name_suffix(args)
+        if not args.out_history:
+            args.out_history="history_" + file_suffix
+        if not args.out_metadata:
+            args.out_metadata="metadata_" + file_suffix
 
-    print("Creando Problema")
-    knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test
-                                     ,classifier_from=args.implementation, pca_from=args.implementation
-                                     ,neightbours_step=args.k_step, pca_step=args.alpha_step
-                                     ,initial_neightbours=args.k, initial_pca=args.alpha
-                                     ,usar_pca=args.use_pca, memoize_pca=args.memoize_pca, print_log=args.print_log)
+        hpo_logger=None
+        if args.out_history:
+            hpo_logger = HPOLogger(args.out_history, ['k', 'alpha'])
 
-    from simpleai.search.viewers import BaseViewer
-    visor = BaseViewer()
+        print("Creando Problema")
+        knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test
+                                         ,classifier_from=args.implementation, pca_from=args.implementation
+                                         ,neightbours_step=args.k_step, pca_step=args.alpha_step
+                                         ,initial_neightbours=args.k, initial_pca=args.alpha
+                                         ,usar_pca=args.use_pca, memoize_pca=pca_memoize,
+                                         print_log=args.print_log, logger=hpo_logger)
 
-    if args.algorithm == "hill-climbing":
-        print("Resolviendo con Hill Climbing")
-        from simpleai.search.local import hill_climbing
-        result = hill_climbing(knn_problem, viewer=visor, iterations_limit=args.iterations_limit)
-        print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
+        from simpleai.search.viewers import BaseViewer
+        visor = BaseViewer()
 
-    elif args.algorithm == "beam":
-        print("Resolviendo con Beam")
-        from simpleai.search.local import beam
-        knn_problem = KNNRandomStateDecorator(knn_problem)
-        result = beam(knn_problem, viewer=visor, beam_size=args.beam_size, iterations_limit=args.iterations_limit)
-        print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
+        if args.algorithm == "hill-climbing":
+            print("Resolviendo con Hill Climbing")
+            from simpleai.search.local import hill_climbing
+            result = hill_climbing(knn_problem, viewer=visor, iterations_limit=args.iterations_limit)
+            print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
 
-    elif args.algorithm == "grid-beam":
-        print("Resolviendo con Beam no random, engrillado")
-        from simpleai.search.local import beam
-        knn_problem = KNNGridDecorator(knn_problem, args.beam_size, args.divition_scale)
-        result = beam(knn_problem, viewer=visor, beam_size=args.beam_size, iterations_limit=args.iterations_limit)
-        print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
+        elif args.algorithm == "beam":
+            print("Resolviendo con Beam")
+            from simpleai.search.local import beam
+            knn_problem = KNNRandomStateDecorator(knn_problem)
+            result = beam(knn_problem, viewer=visor, beam_size=args.beam_size, iterations_limit=args.iterations_limit)
+            print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
 
-    if knn_problem.metadata:
-        with open(args.out_metadata, 'w') as metadata_file:
-            if args.algorithm == "grid-beam":
-                metadata_file.write("K, PCA")
-                for point in knn_problem.metadata:
-                    k, alfa = point
-                    metadata_file.write(str(k) + ", " + str(alfa) + "\n")
+        elif args.algorithm == "grid-beam":
+            print("Resolviendo con Beam no random, engrillado")
+            from simpleai.search.local import beam
+            knn_problem = KNNGridDecorator(knn_problem, args.beam_size, args.divition_scale)
+            result = beam(knn_problem, viewer=visor, beam_size=args.beam_size, iterations_limit=args.iterations_limit)
+            print("Encontramos: {}\nLuego de este camino: {}\n".format(result.state, result.path()))
+
+        if knn_problem.metadata:
+            with open(args.out_metadata, 'w') as metadata_file:
+                if args.algorithm == "grid-beam":
+                    metadata_file.write("K, PCA")
+                    for point in knn_problem.metadata:
+                        k, alfa = point
+                        metadata_file.write(str(k) + ", " + str(alfa) + "\n")
 

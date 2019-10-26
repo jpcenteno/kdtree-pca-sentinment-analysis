@@ -1,3 +1,7 @@
 #!/bin/bash
 
-time for a in {10..90..10}; do for k in {100..1000..100}; do ./searcher.py --algorithm hill-climbing -k $k --alpha $a --k-step 20 --like-classify $1; done; done
+./searcher.py --algorithm hill-climbing --like-classify \
+              --k-step 20 --alpha-step 2 \
+              --grid-k {100..1000..100} --grid-alpha {90..10..10} \
+              --data-set-cut 0.1 \
+              -imp $1

@@ -9,7 +9,7 @@ from time import process_time_ns
 from typing import List, Any
 import csv
 
-class HPOLogger(object): 
+class HPOLogger(object):
     '''
     Registra el accuracy para distintas configuraciones de hiperparametros.
     '''
@@ -17,6 +17,7 @@ class HPOLogger(object):
         '_hyperparameter_names',
         '_writer',
         '_i',
+        '_f'
     )
 
     def __init__(self, out_file: Path, hyperparameter_names: List[str]):
@@ -32,12 +33,15 @@ class HPOLogger(object):
         self._i = 0
 
         fieldnames = ['id'] + hyperparameter_names + ['time', 'acc', 'score']
-        self._writer = csv.DictWriter(open(out_file, 'w'),
-                                      fieldnames=fieldnames)
+        self._f = open(out_file, 'w')
+        self._writer = csv.DictWriter(self._f, fieldnames=fieldnames)
         self._writer.writeheader()
+        self._f.flush()
 
     def log(self, hyp_vals, acc, time, score):
+        print("INSIDE LOGGER")
         self._i += 1
         hyp_dict = dict(zip(self._hyperparameter_names, hyp_vals))
         data_dict = {'id': self._i, 'time': time, 'acc': acc, 'score': score}
         self._writer.writerow({**hyp_dict, **data_dict})
+        self._f.flush()
