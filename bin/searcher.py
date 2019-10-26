@@ -19,6 +19,12 @@ import sentiment
 import random
 import math
 
+def pca_klass_constructor(impl, pca_eps):
+    if impl == "sklearn":
+        return lambda a: PCA(n_components=a, tol=pca_eps)
+    else:
+        return lambda a: sentiment.PCA(a, pca_eps)
+
 from hpologger import HPOLogger
 
 ######################################################################
@@ -106,10 +112,7 @@ class KNNHyperParameters(SearchProblem):
         else:
             self.classifier_klass_constructor = sentiment.KNNClassifier
 
-        if pca_from == "sklearn":
-            self.pca_klass_constructor = lambda a: PCA(n_components=a, tol=pca_eps)
-        else:
-            self.pca_klass_constructor = lambda a: sentiment.PCA(a, pca_eps)
+        self.pca_klass_constructor = pca_klass_constructor(pca_from, pca_eps)
 
         self.X_train = X_train
         self.Y_train = Y_train
@@ -454,7 +457,7 @@ if __name__ == "__main__":
     the_grid = []
     for k in args.grid_k:
         for a in args.grid_alpha:
-            the_grid.append((k, a))
+            the_grid.append((int(k), int(a)))
 
     # BEGIN CHORIPASTEO
     import pandas as pd
@@ -505,12 +508,30 @@ if __name__ == "__main__":
             X_test, y_test = vectorizer.transform(text_test), (label_test == 'pos').values
 
     # diccionario global para que otras celdas aprovechen lo calculado
-    pca_memoize = {} if args.memoize_pca else None
+    if args.memoize_pca:
+        print(the_grid)
+        alphas = []
+        for (k, a) in the_grid:
+            if a not in alphas:
+                alphas.append(a)
+        alphas.sort()
+        max_alpha = alphas[-1]
+        if len(alphas) > 1:
+            print("alphas: {}".format(alphas))
+            max_alpha += max_alpha - alphas[-2] + args.alpha_step # el ancho de la grilla más el paso
+        print("Precalculando un PCA de {} componentes con {} epsilon".format(max_alpha, args.ep))
+        pca = pca_klass_constructor(max_alpha, args.ep)(max_alpha)
+        pca.fit(X_train)
+        x_train = pca.transform(X_train)
+        x_test = pca.transform(X_test)
+        pca_memoize = {}
+        pca_memoize[max_alpha] = (x_train, x_test)
+    else:
+        pca_memoize = None
 
     # este genera una instancia de problema por grilla
-    for (k, a) in the_grid:
-        args.k = int(k)
-        args.alpha = int(a)
+    for (k, alpha) in the_grid:
+        print("grid: ({}, {})".format(k, alpha))
         file_suffix = file_name_suffix(args)
         if not args.out_history:
             args.out_history="history_" + file_suffix
@@ -525,7 +546,7 @@ if __name__ == "__main__":
         knn_problem = KNNHyperParameters(X_train, y_train, X_test, y_test
                                          ,classifier_from=args.implementation, pca_from=args.implementation
                                          ,neightbours_step=args.k_step, pca_step=args.alpha_step
-                                         ,initial_neightbours=args.k, initial_pca=args.alpha
+                                         ,initial_neightbours=k, initial_pca=alpha, pca_eps=args.ep
                                          ,usar_pca=args.use_pca, memoize_pca=pca_memoize,
                                          print_log=args.print_log, logger=hpo_logger)
 
