@@ -31,21 +31,24 @@ pair<double, Vector> power_iteration(const Matrix& A,  Criterion crit, unsigned 
 
             if (crit != residual_vector && std::abs(prev_lambda-lambda) < eps) {
                 #ifdef LLVL1
-                std::cout << "[c2] corta PM por diferencia entre autovalores en iteración: " << i+1 << "/" << num_iter << '\n';
+                std::cout << "[c2] corta PM por diferencia entre autovalores en iteración: "
+                          << i+1 << "/" << num_iter << " con eps: " << eps << '\n';
                 #endif
                 break;
             }
             residual = Av - lambda*v;
             if (crit != eigenvalues && (residual).squaredNorm() < eps) {
                 #ifdef LLVL1
-                std::cout << "[c3] corta PM por diferencia residual en iteración: " << i+1 << "/" << num_iter << '\n';
+                std::cout << "[c3] corta PM por diferencia residual en iteración: "
+                          << i+1 << "/" << num_iter << " con eps: " << eps << '\n';
                 #endif
                 break;
             }
         }
         if ((crit == all || crit == eigenvectors) && (prev_v-v).squaredNorm() < eps) {
             #ifdef LLVL1
-            std::cout << "[c1] corta PM por diferencia entre autovectores en iteración: " << i+1 << "/" << num_iter << '\n';
+            std::cout << "[c1] corta PM por diferencia entre autovectores en iteración: "
+                      << i+1 << "/" << num_iter << " con eps: " << eps << '\n';
             #endif
             break;
         }
