@@ -19,6 +19,8 @@ import sentiment
 import random
 import math
 
+import numpy as np
+
 def pca_klass_constructor(impl, pca_eps):
     if impl == "sklearn":
         return lambda a: PCA(n_components=a, tol=pca_eps)
@@ -37,28 +39,31 @@ def guess_high_alpha(the_grid):
         max_alpha += max_alpha - alphas[-2] + args.alpha_step # el ancho de la grilla más el paso
     return max_alpha
 
-def precalulate_pca(max_alpha, args):
+def precalculate_pca(max_alpha, args):
     print("Precalculando un PCA de {} componentes con {} epsilon".format(max_alpha, args.ep))
-    pca = pca_klass_constructor(max_alpha, args.ep)(max_alpha)
+    pca = pca_klass_constructor(max_alpha, float(args.ep))(max_alpha)
     pca.fit(X_train)
     x_train = pca.transform(X_train)
     x_test = pca.transform(X_test)
-    pca_memoize = {}
-    pca_memoize[max_alpha] = (x_train, x_test)
-    return pca_memoize
+    return x_train, x_test
 
 def get_pca_db_file_name(train_set, test_set, vecto, alpha):
-    """ TODO: tomar en cuenta el vectoizador y los data sets, por ahora solo toma en cuenta el alpha"""
+    """ TODO: tomar en cuenta el vectoizador y los data sets, por ahora solo toma en cuenta el alpha
+    el formato de nombre del archivo es:
+    prefix_<alfa>_x_train.txt
+    o
+    prefix_<alfa>_x_test.txt
+    """
     p = Path("pca_db")
-    f = ""
+    f_prefix = "pca_"
     for it in p.iterdir():
         parts = it.name.split("_")
-        f = parts[0]
-        f_alpha = parts[1].split(".")[0]
+        f_prefix = parts[0]
+        f_alpha = parts[1]
         if int(f_alpha) >= alpha:
             print(f_alpha)
-            return "pca_db/" + "/",  f, f_alpha
-    return "pca_db/", f, None
+            return "pca_db/",  f_prefix + "_", f_alpha
+    return "pca_db/", f_prefix, None
 
 from hpologger import HPOLogger
 
@@ -194,7 +199,7 @@ class KNNHyperParameters(SearchProblem):
         self.log("Estoy en {}, considerando frontera...".format(state))
         return nexts
 
-    def result(self, state, action):
+    def result(self_prefix, state, action):
         """this method receives a state and an action, and must return the resulting state of applying that particular action from that particular state"""
         k, alfa = state
         neigh_step, pca_step = action
@@ -235,6 +240,7 @@ class KNNHyperParameters(SearchProblem):
                 if not self.memoize_pca == None:
                     print("Guardando memoizacion (PCA)")
                     self.memoize_pca[alfa] = (x_train, x_test)
+
         else:
             x_train = self.X_train
             x_test = self.X_test
@@ -472,7 +478,7 @@ if __name__ == "__main__":
     parser.add_argument('--like-classify', dest='like_classify', action='store_true'
                         ,help='usa imbd_small y test_sample.true con los mismos parámetros que el classify')
     parser.add_argument('--vectorizer', choices=["like-classify", "5000", "sqrt-tokens"], default="5000")
-    parser.add_argument('--ep', default=pca_eps_default
+    parser.add_argument('--ep', default=pca_eps_default, type=float
                         ,help='Tolerancia para el power method')
     parser.add_argument('--grid-k', nargs='+', default=None
                         ,help='Junto a grid-alpha crea el producto cartesiano con los valores pasados como lista')
@@ -546,11 +552,18 @@ if __name__ == "__main__":
         max_alpha = guess_high_alpha(the_grid)
         db_dir, file_name_prefix, file_name_alpha = get_pca_db_file_name(
             args.data_set_train, args.data_set_test, args.vectorizer, max_alpha)
+
         if file_name_alpha:
-            pre_memoize = np.loadtxt(db_dir + file_name + file_name_alpha)
+            x_train = np.loadtxt(db_dir + file_name_prefix + file_name_alpha + "_x_train.txt")
+            x_test = np.loadtxt(db_dir + file_name_prefix + file_name_alpha + "_x_test.txt")
         else :
-            pre_memoize = precalculate_pca(the_grid, args)
-            np.savetxt(file_name + str(max_alpha))
+            x_train, x_test = precalculate_pca(max_alpha, args)
+            np.savetxt(db_dir + file_name_prefix + str(max_alpha) + "_x_train.txt", x_train)
+            np.savetxt(db_dir + file_name_prefix + str(max_alpha) + "_x_test.txt", x_test)
+
+        pca_memoize = {}
+        pca_memoize[max_alpha] = (x_train, x_test)
+
     else:
         pca_memoize = None
 
