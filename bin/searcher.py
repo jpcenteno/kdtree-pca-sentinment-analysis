@@ -167,7 +167,6 @@ class KNNHyperParameters(SearchProblem):
 
     def get_memoized_pca(self, alfa):
         for (a, data) in self.memoize_pca.items():
-            print ("explorando memoizado: ({}, {})".format(a, data))
             if a == alfa:
                 return data
             if a > alfa:
@@ -529,14 +528,19 @@ if __name__ == "__main__":
     else:
         pca_memoize = None
 
+    if args.out_history:
+        dir_prefix = str(args.out_history) + "/"
+    else:
+        dir_prefix = ""
+
     # este genera una instancia de problema por grilla
     for (k, alpha) in the_grid:
-        print("grid: ({}, {})".format(k, alpha))
+        args.k=str(k)
+        args.alpha=str(alpha) # lo necesita el file_name_suffix
         file_suffix = file_name_suffix(args)
-        if not args.out_history:
-            args.out_history="history_" + file_suffix
-        if not args.out_metadata:
-            args.out_metadata="metadata_" + file_suffix
+
+        args.out_history=dir_prefix + "history_" + file_suffix
+        args.out_metadata=dir_prefix + "metadata_" + file_suffix
 
         hpo_logger=None
         if args.out_history:

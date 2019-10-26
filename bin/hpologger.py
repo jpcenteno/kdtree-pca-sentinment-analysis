@@ -39,7 +39,6 @@ class HPOLogger(object):
         self._f.flush()
 
     def log(self, hyp_vals, acc, time, score):
-        print("INSIDE LOGGER")
         self._i += 1
         hyp_dict = dict(zip(self._hyperparameter_names, hyp_vals))
         data_dict = {'id': self._i, 'time': time, 'acc': acc, 'score': score}
