@@ -1,6 +1,5 @@
 En esta sección se buscan los hiperaparámetros de KNN y PCA que mejor
-precisión\footnote{En el informe usaremos indistintamente accuracy o
-  precisión} nos brinden, sin perder de vista, pero dejando en segundo
+\emph{accuracy} nos brinden, sin perder de vista, pero dejando en segundo
 plano, el tiempo de cómputo asociado. Además respetaremos los
 parámetros de tolerancia y vocabulario encontrados en las secciones
 anteriores.
@@ -61,7 +60,7 @@ Nuestra aproximación al problema, fue el de hacer una grilla, donde se
 generan particiones del plano vecinos-componentes de forma
 regular. Luego usar heurísticas de búsqueda en cada una de las celdas
 de la misma. En particular se usó \emph{hill
-  climbing}\cite{aima}\footnote{o búsqueda local, intenta en cada paso
+  climbing}\cite{aiama}\footnote{o búsqueda local, intenta en cada paso
   mejorar la solución obtenida, considerando una frontera de vecinos.}
 Definiendo un tamaño de grilla y un punto inicial en la misma, la
 heurística se mueve a pequeños intervalos -discretos- en las cercanías
@@ -82,13 +81,13 @@ sensiblemente mejor que simplemente tomar un punto arbitrario de la
 misma.
 
 Para la definición de los parámetros de la búsqueda local, tuvimos en
-cuenta las consideraciones anteriores y generamos dos grillas. Una de
-tamaño pequeño, donde las componentes principales se mueven entre 10 y
-90 mientras que los vecinos entre 100 y 1000 \ref{fig:param-small} y
-otra con una grilla de un orden de maginitud más grande
-\ref{fig:param-big} que sigue de donde dejó la anterior en los
-componentes principales, pero los incrementa a un ritmo mayor, pero
-mantiene las divisiones de los vecinos.
+cuenta las consideraciones anteriores y generamos dos
+grillas. Una \ref{fig:param-small} de tamaño pequeño, donde las
+componentes principales se mueven entre 10 y 90 mientras que los
+vecinos entre 100 y 1000 y otra \ref{fig:param-big} con una grilla de
+un orden de maginitud más grande que sigue de donde dejó la anterior
+en los componentes principales, pero los incrementa a un ritmo mayor,
+pero mantiene las divisiones de los vecinos.
 
 En ambos experimentos, la definición del tamaño de los pasos que hace
 la búsqueda local, tuvimos en cuenta la diferente relación de aspecto
@@ -103,9 +102,9 @@ En lafiguras \ref{fig:param-small} se ve una buena zona para elegir parámetros 
 Vemos en la figura \ref{fig:param-big} que se conecta adecuadamente,
 la primera fila, con la última del gráfico anterior; sugiriendo cierta
 suavidad en los superficie i.e en la relación de los parámetros con la
-precisión. El descenso más abrupto entre 500 y 600 para PCA que el
+\emph{accuracy}. El descenso más abrupto entre 500 y 600 para PCA que el
 gráfico anterior se debe al cambio de escala. El descenso de la
-precisión se puede deber a que la franja 60-600 presenta las componentes con mayor peso y todo lo que se agregue luego es ruido.
+\emph{accuracy} se puede deber a que la franja 60-600 presenta las componentes con mayor peso y todo lo que se agregue luego es ruido.
 
 Cabe destacar que según se acostumbra en procesamiento de
 lenguaje\cite{LP} natural\footnote{In general (Gale and Church, 1990)
