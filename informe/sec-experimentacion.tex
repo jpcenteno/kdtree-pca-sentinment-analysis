@@ -75,7 +75,7 @@ reseñas.
 
 Para buscar una $k$ cantidad de vecinos que optimice \knn{} usamos nuevamente el dataset de \textit{imdb\_small}, iteramos un $k$ de 1 a 3000 con saltos de a 20.
 
-Originalmente pensábamos arrancar en un rango mas adelantado dado que para $k$ pequeños sobre muestras grandes se puede correr riesgos de overfitting por puntos "ruidosos" que estén demasiado pegados ganandole en la votación a la verdadera clase, pero como $k$ pequeños no son caros de computar los consideramos en la experimentación de todos modos.
+Originalmente pensábamos arrancar en un rango mas adelantado dado que para $k$ pequeños sobre muestras grandes se puede correr riesgos de overfitting por puntos ``ruidosos" que estén demasiado pegados ganandole en la votación a la verdadera clase, pero como $k$ pequeños no son caros de computar los consideramos en la experimentación de todos modos.
 
 Elegir $k$ grande tiene el problema de que los elementos de la clase de un punto quizás están todos en su vecindad inmediata y a medida que vamos buscando vecinos en zonas más alejadas vamos tendiendo a clasificar peor el punto: una clase muy densa pero rodeada de otra mas dispersa y sobrerrepresentada será peor catalogada cuanto más grande sea $k$. Si además $k$ es lo suficientemente grande (aproximadamente superando la mitad de la población total) la proporción de vecinos más cercanos se parece cada vez más y más a la proporción muestral de cada clase sobre el total, lo cual no aporta nada de información. Por lo tanto decidimos iterar solamente hasta la mitad.
 
@@ -84,11 +84,11 @@ Tendría sentido con este análisis que acabamos de hacer encontrar los mejores 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{./img/knn.png}
 \centering
-\caption{Progresión de la precisión de KNN en función de la cantidad de vecinos.\label{fig:knn_acc}}
+\caption{Progresión de accuracy score de KNN en función de la cantidad de vecinos.\label{fig:knn_acc}}
 
 \end{figure}
 
-Como podemos apreciar en la figura \ref{fig:knn_acc}, se cumple nuestra predicción de que la precisión empeora conforme la cantidad de vecinos se vuelve muy grande o muy pequeña. Alcanzamos el máximo accuracy score en 0.681116 para $k=1801$ que se sitúa muy cerca de la mitad del intervalo que elegimos. Nos resulta complicado comprender por qué desciende la precisión en los primeros valores, especulamos con que los problemas de ruido y sesgo requieran valores de $k$ bajos pero mayores a los mínimos para que empiecen a aparecer. Otro motivo sea que si el espacio de los vectores no esté separado de manera clara existan zonas con más ruido que en el resto y que se vayan acumulando outliers de clases difusas hasta que se sale de los mismos.
+Como podemos apreciar en la figura \ref{fig:knn_acc}, se cumple nuestra predicción de que el accuracy score empeora conforme la cantidad de vecinos se vuelve muy grande o muy pequeña. Alcanzamos el máximo accuracy score en 0.681116 para $k=1801$ que se sitúa muy cerca de la mitad del intervalo que elegimos. Nos resulta complicado comprender por qué desciende el accuracy score en los primeros valores, especulamos con que los problemas de ruido y sesgo requieran valores de $k$ bajos pero mayores a los mínimos para que empiecen a aparecer. Otro motivo sea que si el espacio de los vectores no esté separado de manera clara existan zonas con más ruido que en el resto y que se vayan acumulando outliers de clases difusas hasta que se sale de los mismos.
 
 \subsection{Optimización de $k$ y $\alpha$ para \knn{} con PCA}%
 \label{sub:alpha_k_knn_pca}

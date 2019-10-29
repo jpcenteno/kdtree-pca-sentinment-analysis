@@ -1,6 +1,5 @@
 En esta sección se buscan los hiperaparámetros de KNN y PCA que mejor
-precisión\footnote{En el informe usaremos indistintamente accuracy o
-  precisión} nos brinden, sin perder de vista, pero dejando en segundo
+accuracy score\footnote{Porcentaje de predicciones correctas} nos brinden, sin perder de vista, pero dejando en segundo
 plano, el tiempo de cómputo asociado. Además respetaremos los
 parámetros de tolerancia y vocabulario encontrados en las secciones
 anteriores.
@@ -102,10 +101,9 @@ En lafiguras \ref{fig:param-small} se ve una buena zona para elegir parámetros 
 
 Vemos en la figura \ref{fig:param-big} que se conecta adecuadamente,
 la primera fila, con la última del gráfico anterior; sugiriendo cierta
-suavidad en los superficie i.e en la relación de los parámetros con la
-precisión. El descenso más abrupto entre 500 y 600 para PCA que el
-gráfico anterior se debe al cambio de escala. El descenso de la
-precisión se puede deber a que la franja 60-600 presenta las componentes con mayor peso y todo lo que se agregue luego es ruido.
+suavidad en los superficie i.e en la relación de los parámetros con el accuracy score. El descenso más abrupto entre 500 y 600 para PCA que el
+gráfico anterior se debe al cambio de escala. El descenso de
+accuracy se puede deber a que la franja 60-600 presenta las componentes con mayor peso y todo lo que se agregue luego es ruido.
 
 Cabe destacar que según se acostumbra en procesamiento de
 lenguaje\cite{LP} natural\footnote{In general (Gale and Church, 1990)
@@ -147,4 +145,3 @@ principales, que mencionamos antes.
     por el máximo local.}
     \label{fig:param-big}
 \end{figure}
-
