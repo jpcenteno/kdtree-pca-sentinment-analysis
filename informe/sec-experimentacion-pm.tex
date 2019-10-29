@@ -20,7 +20,7 @@ entonces tenemos que, con $\lambda_j$ autovalores de $A$:
  \min_{j}|\lambda_j - \hat{\lambda}^{(k)}| < \epsilon
 \end{equation}
 
-Si bien da una buena idea de que el criterio de vector residual contiene en sí información sobre la convergencia de los autovalores (tentando la idea de que es más restrictivo que este) no necesariamente el $\lambda_j$ más cercano a $\hat{\lambda}^{(k)}$ sea el $\lambda_1$ buscado y también podría suceder que, bajo ciertas condiciones, $v^{(k)}$ esté más cerca de $\lambda_1$ que de $v^{(k-1)}$.
+Si bien da una buena idea de que el criterio de vector residual contiene en sí información sobre la convergencia de los autovalores (tentando la idea de que es más restrictivo que este criterio) no necesariamente el $\lambda_j$ más cercano a $\hat{\lambda}^{(k)}$ sea el $\lambda_1$ buscado y también podría suceder que, bajo ciertas condiciones, $\hat{\lambda}^{(k)}$ esté más cerca de $\lambda_1$ que de $\hat{\lambda}^{(k-1)}$.
 
 El criterio de diferencia de autovectores nos resultaba interesante porque como no considera autovalores para cortar de ser lo suficientemente bueno significaría solo computarlos al final del método y no en cada iteración, además de que se condice en espiritu con el uso que le vamos a dar al resultado (solamente usar los autovectores para cambiar de base la matriz de covarianzas, sin importar los autovalores)
 
