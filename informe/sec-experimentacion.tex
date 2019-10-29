@@ -11,6 +11,28 @@ implementación de \textit{Scikit Learn}.
 
 \subsection{Metodología}%
 \label{sub:metodologia}
+\subsubsection{Dependencia de factores}
+
+Cuando consideramos una métrica de precisión como función objetivo de todos estos parámetros
+no resulta manejable optimizar en un único paso de manera multivariada (son muchos)
+ni tampoco analizar parámetro a parámetro dado que cada uno afecta como variable de manera
+interpendiente a la función objetivo no pudiendo aislar un \textit{orden topológico}
+de parámetros para optimizar de manera independiente.
+En respuesta a esto se plantea un esquema de experimentación basado en aproximar
+un orden de optimización de parámetros que sea relativamente parecido a un orden
+topológico fijando algunos de ellos en valores intuitivos para eliminar dependencias
+y poder seguir con las optimizaciones de a pares o por separado según sea conveniente
+de manera de respetar lo máximo posible las dependencias.
+Aunque solamente realizamos una iteración como prueba de concepto, este esquema
+permite poder ir actualizando los valores que se fijan de manera iterativa incremental
+mejorando paso a paso la función objetivo. El esquema en cuestión es:
+\begin{itemize}
+    \item buscar tolerancia de convergencia para método de la potencia (desempata candidatos con PCA con algunos parámetros fijos)
+    \item buscar el k óptimo para kNN sin PCA en función de alguna vectorización fija
+    \item buscar k y alfa óptimos para kNN con  PCA guiando el rango de k según el paso anterior nuevamente con vectorización fija
+    \item buscar parámetros de vectorización óptimos para kNN según los parámetros anteriores
+\end{itemize}
+
 
 \subsection{Convergencia de método de la potencia}%
 \label{sub:pm}
