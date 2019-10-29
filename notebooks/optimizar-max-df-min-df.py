@@ -23,10 +23,10 @@ import sentiment
 # ----------------------------------------------------------------------------
 
 # Variar las combinaciones de hiperparametros acá:
-ALPHA = 200
-K = 70
-max_dfs = [.60, .75, .80, .80, .85, .90, .95]
-min_dfs = [.01, .05, .10, .15, .20, .25, .30, .35, .40]
+ALPHA = 650
+K = 2080
+max_dfs = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+min_dfs = [0.001, 0.025, 0.05, 0.075, 0.1, 0.125, 0.15]
 
 # Configuración del logging
 logging.basicConfig(level=logging.WARNING, format='[%(levelname)s] %(message)s')
