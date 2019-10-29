@@ -3,8 +3,8 @@
 # Toma un argumento: la implementación € {sentiment, sklearn}
 
 ./searcher.py --algorithm hill-climbing \
-              --k-step 10 --alpha-step 10 \
-              --grid-k {100..2000..100} --grid-alpha {1100..500..100} \
+              --k-step 5 --alpha-step 25 \
+              --grid-k {1..100..10} --grid-alpha {500..50..50} \
               --use-dense-override \
               --out-history big \
               -imp $1
