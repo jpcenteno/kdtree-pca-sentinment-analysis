@@ -23,8 +23,8 @@ import sentiment
 # ----------------------------------------------------------------------------
 
 # Variar las combinaciones de hiperparametros acá:
-ALPHA = 650
-K = 2080
+ALPHA = 500
+K = 50
 max_dfs = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 min_dfs = [0.001, 0.025, 0.05, 0.075, 0.1, 0.125, 0.15]
 
