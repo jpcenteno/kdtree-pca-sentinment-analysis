@@ -3,151 +3,139 @@ Este modulo contiene funciones relacionadas con la experimentación sobre el
 tamaño muestral y vocabulario.
 '''
 
+import pandas as pd
+
+import csv
+
 import itertools
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.metrics import accuracy_score
 
-import pathos.multiprocessing as mp
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-from knnpca import PCAKneighboursClasifier
-
 from time import process_time
+
+import sentiment
+
+# ----------------------------------------------------------------------------
+# Parametros
+# ----------------------------------------------------------------------------
+
+
+SUBSAMPLING_RATIOS = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
+                      0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+
+HPARAMS = [(10, 100), (50, 100), (150, 100), (100, 10), (100, 20), (100, 50)]
+N_REPEATS = 10
+
+# ----------------------------------------------------------------------------
+# Data:
+# ----------------------------------------------------------------------------
+
+
+def read_data():
+    '''
+    Lee los datos del disco y los vectoriza.
+    '''
+
+    # Read data:
+    df = pd.read_csv("data/imdb_small.csv", index_col=0)
+    text_train = df[df.type == 'train']["review"]
+    label_train = df[df.type == 'train']["label"]
+    text_test = df[df.type == 'test']["review"]
+    label_test = df[df.type == 'test']["label"]
+
+    # Vectorizo los datos. Se usan estos max_df y min_df.
+    vectorizer = CountVectorizer(max_df=0.90, min_df=0.01, max_features=5000)
+    vectorizer.fit(text_train)
+    X_train = vectorizer.transform(text_train)
+    y_train = (label_train == 'pos').values
+    X_test = vectorizer.transform(text_test)
+    y_test = (label_test == 'pos').values
+
+    return X_train, y_train, X_test, y_test
+
+
+def subsample(X_train, y_train, ratio):
+    '''
+    Realiza un subsampling del set de entrenamiento. Respeta un 50/50 entre las
+    labels.
+    '''
+    print(f'N_train original = {X_train.shape[0]}')
+    sss = StratifiedShuffleSplit(n_splits=1, test_size=(1 - ratio))
+    subsample_index, _ = next(sss.split(X_train, y_train))
+    X_train_subsample = X_train[subsample_index]
+    y_train_subsample = y_train[subsample_index]
+    print(f'N_train subsample = {X_train_subsample.shape[0]}')
+    return X_train_subsample, y_train_subsample
+
+
+# ----------------------------------------------------------------------------
+# Utilidades
+# ----------------------------------------------------------------------------
 
 def _repeat(it, n):
     return itertools.chain.from_iterable(itertools.repeat(it, n))
 
-def exp_train_subsample(X_train, y_train, X_test, y_test, subsampling_ratio,
-                        k=100, alpha=100):
+
+def get_max_alpha(hparams):
     '''
-    Computa el accuracy bajo un subsample del conjunto de entrenamiento.
-
-    Parameters
-    ----------
-    X_train : Matriz (n, m)
-        Training data.
-    y_train : Vector (n,)
-        Vector con los target value para `X_train`.
-    X_test : Matriz (n, m)
-        Training data.
-    y_test : Vector (n,)
-        Vector con los target value para `X_test`.
-    subsampling_ratio : float en rango (0, 1]
-        Ratio para subsamplear X_train.
-    k : int en rango {1 ... n}, optional
-        Hyperparameter de KNN.
-    alpha : int en rango {1 ... m}, optional
-        Hyperparameter de PCA.
-
-    Returns
-    -------
-    acc : float
-        Accuracy obtenido para KNN con PCA subsampleando `(X_train, y_train)`
-        con el ratio `subsampling_ratio`.
-    n_train : int > 0
-        Tamaño muestral del set de entrenamiento.
-    k : int en rango {1 ... n}, optional
-        Hyperparameter de KNN.
-    alpha : int en rango {1 ... m}, optional
-        Hyperparameter de PCA.
-    time_fit : float
-        Tiempo de cpu en segundos para el fit.
-    time_predict : float
-        Tiempo de cpu en segundos para el predict.
+    Devuelve el maximo alpha entre los hiperparametros.
     '''
+    return max([alpha for _, alpha in hparams])
 
-    # Subsampling
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=subsampling_ratio)
-    subsample_index, _ = next(sss.split(X_train, y_train))
-    X_train, y_train = X_train[subsample_index], y_train[subsample_index]
-
-    time_start = process_time()
-    pcaknn = PCAKneighboursClasifier(k, alpha)
-    time_end = process_time()
-    time_fit = time_end - time_start
-
-    time_start = process_time()
-    pcaknn.fit(X_train, y_train)
-    time_end = process_time()
-    time_predict = time_end - time_start
-
-    y_pred = pcaknn.predict(X_test)
+def get_acc(k, X_train, y_train, X_test, y_test):
+    # Construye clasificador KNN
+    knn = sentiment.KNNClassifier(k)
+    knn.fit(X_train, y_train)
+    # Obtiene accuracy:
+    y_pred = knn.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
+    return acc
 
-    return {'n_train': len(subsample_index),
-            'k': k,
-            'alpha': alpha,
-            'acc': acc,
-            'time_fit': time_fit,
-            'time_predict': time_predict}
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+
+if __name__ == '__main__':
+
+    X_train, y_train, X_test, y_test = read_data()
+    alpha_max = get_max_alpha(HPARAMS)
 
 
-def exp_grid_train_subsample(X_train, y_train, X_test, y_test,
-                             subsampling_ratios, ks, alphas, n_repeats=5):
-    '''
-    Computa el accuracy bajo un subsample del conjunto de entrenamiento.
+    with open('exp-vocabulario.csv', 'w') as f:
 
-    Parameters
-    ----------
-    X_train : Matriz (n, m)
-        Training data.
-    y_train : Vector (n,)
-        Vector con los target value para `X_train`.
-    X_test : Matriz (n, m)
-        Training data.
-    y_test : Vector (n,)
-        Vector con los target value para `X_test`.
-    subsampling_ratios : List[float] en rango (0, 1]
-        Ratio para subsamplear X_train.
-    ks : List[int] en rango {1 ... n}, optional
-        Hyperparameter de KNN.
-    alphas : List[int] en rango {1 ... m}, optional
-        Hyperparameter de PCA.
-    n_repeats : int > 0
-        Cantidad de mediciones para el mismo experimento
+        csv = csv.writer(f)
+        csv.writerow(['n', 'k', 'alpha', 'acc'])
 
-    Returns
-    -------
-    results: List[Dict] de:
-        acc : float
-            Accuracy obtenido para KNN con PCA subsampleando
-            `(X_train, y_train)` con el ratio `subsampling_ratio`.
-        n_train : int > 0
-            Tamaño muestral del set de entrenamiento.
-        k : int en rango {1 ... n}, optional
-            Hyperparameter de KNN.
-        alpha : int en rango {1 ... m}, optional
-            Hyperparameter de PCA.
-        time_fit : float
-            Tiempo de cpu en segundos para el fit.
-        time_predict : float
-            Tiempo de cpu en segundos para el predict.
-    '''
+        for ratio in _repeat(SUBSAMPLING_RATIOS, N_REPEATS):
 
-    print('def configurations()')
+            print('Ratio:', ratio)
 
-    def configurations(ratios, ks, alphas, n_repeats):
-        'Iterador que devuelve las configuraciones de parametros a correr.'
-        return _repeat(itertools.product(ratios, ks, alphas), n_repeats)
+            # Saco un subsample para ese ratio:
+            X_train_subsample, y_train_subsample = subsample(X_train, y_train,
+                                                             ratio)
 
-    print('def wrapper()')
-    def wrapper(params):
-        'Wraper para llamar la funcion en el map'
-        ratio, k, alpha = params
-        print(f'ratio = {ratio}, k = {k}, alpha = {alpha}')
-        try:
-            result = exp_train_subsample(X_train, y_train, X_test, y_test,
-                                         ratio, k=k, alpha=alpha)
-            return result
-        except ValueError: # YOLO
-            print('Raised valueerror')
+            # Obtiene tamaño sub-set de entrenamiento
+            n = X_train_subsample.shape[0]
 
-    with mp.Pool(mp.cpu_count()) as pool:
-        print('gen_configs')
-        confs = list(itertools.product(subsampling_ratios, ks, alphas)) * n_repeats
-        print('computando')
-        results = pool.map(wrapper, confs)
+            # Aplico PCA con el alpha mas grande. Esto es para hacerlo una sola
+            # vez. despues puedo simplificar reduciendo las columnas.
+            pca = sentiment.PCA(alpha_max)
+            pca.fit(X_train_subsample)
+            X_train_subsample_pca = pca.transform(X_train_subsample)
+            X_test_pca = pca.transform(X_test)
 
-    return itertools.chain(results)
+            for k, alpha in HPARAMS:
+
+                print(f'calculando para k, alpha = {k}, {alpha}')
+
+                # Usa el [:, :alpha] para aprovechar un único PCA reduciendo la
+                # cantidadde columnas.
+                acc = get_acc(k=k,
+                              X_train=X_train_subsample_pca[:, :alpha],
+                              y_train=y_train_subsample,
+                              X_test=X_test_pca[:, :alpha],
+                              y_test=y_test)
+
+                print(f'{n},{k},{alpha},{acc}')
+                csv.writerow([n, k, alpha, acc])
+                f.flush()

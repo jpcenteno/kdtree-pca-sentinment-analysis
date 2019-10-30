@@ -4,13 +4,31 @@
 % TL;DR; Intro experimentación.
 En esta sección se incluye la experimentación llevada a cabo sobre nuestro
 modelo de clasificador.
-%
-% TL;DR xq sklearn:
-Por restricciones de tiempo, todos los experimentos fueron corridos sobre la
-implementación de \textit{Scikit Learn}.
 
 \subsection{Metodología}%
 \label{sub:metodologia}
+\subsubsection{Dependencia de factores}
+
+Cuando consideramos una métrica de precisión como función objetivo de todos estos parámetros
+no resulta manejable optimizar en un único paso de manera multivariada (son muchos)
+ni tampoco analizar parámetro a parámetro dado que cada uno afecta como variable de manera
+interpendiente a la función objetivo no pudiendo aislar un \textit{orden topológico}
+de parámetros para optimizar de manera independiente.
+En respuesta a esto se plantea un esquema de experimentación basado en aproximar
+un orden de optimización de parámetros que sea relativamente parecido a un orden
+topológico fijando algunos de ellos en valores intuitivos para eliminar dependencias
+y poder seguir con las optimizaciones de a pares o por separado según sea conveniente
+de manera de respetar lo máximo posible las dependencias.
+Aunque solamente realizamos una iteración como prueba de concepto, este esquema
+permite poder ir actualizando los valores que se fijan de manera iterativa incremental
+mejorando paso a paso la función objetivo. El esquema en cuestión es:
+\begin{itemize}
+    \item buscar tolerancia de convergencia para método de la potencia (desempata candidatos con PCA con algunos parámetros fijos)
+    \item buscar el k óptimo para kNN sin PCA en función de alguna vectorización fija
+    \item buscar k y alfa óptimos para kNN con  PCA guiando el rango de k según el paso anterior nuevamente con vectorización fija
+    \item buscar parámetros de vectorización óptimos para kNN según los parámetros anteriores
+\end{itemize}
+
 
 \subsection{Convergencia de método de la potencia}%
 \label{sub:pm}
@@ -18,64 +36,14 @@ implementación de \textit{Scikit Learn}.
 
 \subsection{Impacto del tamaño del set de entrenamiento}%
 \label{sub:exp_training_set}
-
-% TL;DR; Como se diseño el experimento
-%
-Fueron tomadas mediciones sobre el comportamiento del \textit{accuracy} al
-reducir el tamaño del set de entrenamiento para \knn{} con PCA.\@ Para ello se
-redujo el tamaño muestral, tomando distintas sub-muestras al azar, respetando
-una proporción pareja entre reseñas con calificación positiva y negativa.
-% k y alpha
-Se mantuvieron constantes $k$ y $\alpha$. El experimento se repitió para
-distintas configuraciones de los mismos.
-
-% acc vs N; k fijo; distintos alpha
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.6\textwidth]{img/exp_subsampling_k_fijo}
-    \caption{\textit{Accuracy} obtenido al reducir el conjunto de
-    entrenamiento.  Para valor fijo de $k=100$.}%
-    \label{fig:subsampling_k_fijo}
-\end{figure}
-
-% acc vs N; alpha fijo; distintos k
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.6\textwidth]{img/exp_subsampling_alpha_fijo}
-    \caption{\textit{Accuracy} obtenido al reducir el conjunto de
-    entrenamiento.  Para valor fijo de $\alpha=100$.}%
-    \label{fig:subsampling_alpha_fijo}
-\end{figure}
-
-% TL;DR; mas data => mas accuracy.
-%
-Puede observarse en las figuras~\ref{fig:subsampling_k_fijo}
-y~\ref{fig:subsampling_alpha_fijo} que el \textit{accuracy} incrementa al
-incrementar el tamaño muestral.  Por otro lado, la calidad del modelo crece
-cada vez en menor medida, por lo que se cree que existe un punto a partir del
-cual carece de sentido incrementar el set de entrenamiento. Como el rendimiento
-del modelo sigue siendo bajo, creemos que la máxima cantidad de instancias de
-entrenamiento disponible, $N = 6225$, esta por debajo del tamaño óptimo.
-
-% TL;DR; El tamaño óptimo parece ser independiente de k y alpha.
-%
-Se observó el mismo comportamiento de la curva para todas las configuraciones
-de $k$ y $\alpha$, por lo que se cree, el tamaño muestral óptimo es
-independiente de los hiperparámetros a escoger.
-
-% TL;DR; Se observa mayor varianza para N bajo.
-%
-A su vez se observa que la varianza en el \textit{accuracy} es mayor para
-tamaños muestrales chicos. Esto es porque las reseñas conocidas por el modelo
-pueden ser, con mayor probabilidad, poco representativas la totalidad de las
-reseñas.
+\input{sec-experimentacion-tamano-set-entrenamiento.tex}
 
 \subsection{Optimización de $k$ para \knn{} sin PCA}%
 \label{sub:knn_sin_pca}
 
 Para buscar una $k$ cantidad de vecinos que optimice \knn{} usamos nuevamente el dataset de \textit{imdb\_small}, iteramos un $k$ de 1 a 3000 con saltos de a 20.
 
-Originalmente pensábamos arrancar en un rango mas adelantado dado que para $k$ pequeños sobre muestras grandes se puede correr riesgos de overfitting por puntos "ruidosos" que estén demasiado pegados ganandole en la votación a la verdadera clase, pero como $k$ pequeños no son caros de computar los consideramos en la experimentación de todos modos.
+Originalmente pensábamos arrancar en un rango mas adelantado dado que para $k$ pequeños sobre muestras grandes se puede correr riesgos de overfitting por puntos ``ruidosos" que estén demasiado pegados ganandole en la votación a la verdadera clase, pero como $k$ pequeños no son caros de computar los consideramos en la experimentación de todos modos.
 
 Elegir $k$ grande tiene el problema de que los elementos de la clase de un punto quizás están todos en su vecindad inmediata y a medida que vamos buscando vecinos en zonas más alejadas vamos tendiendo a clasificar peor el punto: una clase muy densa pero rodeada de otra mas dispersa y sobrerrepresentada será peor catalogada cuanto más grande sea $k$. Si además $k$ es lo suficientemente grande (aproximadamente superando la mitad de la población total) la proporción de vecinos más cercanos se parece cada vez más y más a la proporción muestral de cada clase sobre el total, lo cual no aporta nada de información. Por lo tanto decidimos iterar solamente hasta la mitad.
 
@@ -84,11 +52,11 @@ Tendría sentido con este análisis que acabamos de hacer encontrar los mejores 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{./img/knn.png}
 \centering
-\caption{Progresión de la precisión de KNN en función de la cantidad de vecinos.\label{fig:knn_acc}}
+\caption{Progresión de accuracy score de KNN en función de la cantidad de vecinos.\label{fig:knn_acc}}
 
 \end{figure}
 
-Como podemos apreciar en la figura \ref{fig:knn_acc}, se cumple nuestra predicción de que la precisión empeora conforme la cantidad de vecinos se vuelve muy grande o muy pequeña. Alcanzamos el máximo accuracy score en 0.681116 para $k=1801$ que se sitúa muy cerca de la mitad del intervalo que elegimos. Nos resulta complicado comprender por qué desciende la precisión en los primeros valores, especulamos con que los problemas de ruido y sesgo requieran valores de $k$ bajos pero mayores a los mínimos para que empiecen a aparecer. Otro motivo sea que si el espacio de los vectores no esté separado de manera clara existan zonas con más ruido que en el resto y que se vayan acumulando outliers de clases difusas hasta que se sale de los mismos.
+Como podemos apreciar en la figura \ref{fig:knn_acc}, se cumple nuestra predicción de que el accuracy score empeora conforme la cantidad de vecinos se vuelve muy grande o muy pequeña. Alcanzamos el máximo accuracy score en 0.681116 para $k=1801$ que se sitúa muy cerca de la mitad del intervalo que elegimos. Nos resulta complicado comprender por qué desciende el accuracy score en los primeros valores, especulamos con que los problemas de ruido y sesgo requieran valores de $k$ bajos pero mayores a los mínimos para que empiecen a aparecer. Otro motivo sea que si el espacio de los vectores no esté separado de manera clara existan zonas con más ruido que en el resto y que se vayan acumulando outliers de clases difusas hasta que se sale de los mismos.
 
 \subsection{Optimización de $k$ y $\alpha$ para \knn{} con PCA}%
 \label{sub:alpha_k_knn_pca}

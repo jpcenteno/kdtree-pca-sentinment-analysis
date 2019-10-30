@@ -1,6 +1,6 @@
 En esta sección se buscan los hiperaparámetros de KNN y PCA que mejor
-precisión\footnote{En el informe usaremos indistintamente accuracy o
-  precisión} nos brinden, sin perder de vista, pero dejando en segundo
+\emph{accuracy} score\footnote{Porcentaje de predicciones correctas} nos brinden, sin perder de vista, pero dejando en segundo
+
 plano, el tiempo de cómputo asociado. Además respetaremos los
 parámetros de tolerancia y vocabulario encontrados en las secciones
 anteriores.
@@ -25,19 +25,23 @@ datos.
 
 Para esto usamos una estructura ``arboles kd'' o ``kd-trees'' que
 permiten particionar el espacio de forma binaria por dimensión y de
-esta manera permiten implementaciones mucho más eficientes de KNN.
+esta manera permiten implementaciones mucho más eficientes de KNN. Más aún, este
+tipo de estructuras permite paralelismo en las queries, lo que nos permitió
+pasar del orden de minutos a segundos para buscar vecinos más cercanos.
+
+Para experimentar de manera más veloz sobre PCA también decidimos computar una
+única vez los cambios de variables de la matriz sobre el mayor alfa requerido
+y recortar luego componentes de esa matriz ya almacenada.
 
 \subsubsection{Busqueda de Parámetros}
 
 A pesar de las optimizaciones hechas, la búsqueda es intensa en tiempo
-y extensa en los valores que pueden tomar los parámetros.
-
-Valores grandes de PCA se descartan, pues uno de las características
-del método es reducir la cantidad de dimensiones de los puntos
+y extensa en los valores que pueden tomar los parámetros. Valores
+grandes de PCA se descartan, pues uno de las características del
+método es reducir la cantidad de dimensiones de los puntos
 muestrales. Es decir, en nuestro caso, elegir aquellas palabras que
-tienen un mayor peso en la predicción de la clasificación.
-
-Por otro lado valores muy pequeños pueden generar pérdida de información.
+tienen un mayor peso en la predicción de la clasificación. Por otro
+lado valores muy pequeños pueden generar pérdida de información.
 
 Algo similar sucede con el parámetro de los vecinos, valores muy
 pequeños hacen demasiado sensible al punto a ser predecido, de su
@@ -55,24 +59,77 @@ embargo, este sigue siedo un intervalo bastante grande.
 
 Con un vocabulario del orden de las 5 mil palábras y una cantidad de
 datos de entrenamiento del orden de los 15 mil, tenemos un espacio
-enorme para la búsqueda.
+enorme para la búsqueda. Nuestra aproximación al problema, fue el de
+hacer una grilla, donde se generan particiones del plano
+vecinos-componentes de forma regular. Luego usar heurísticas de
+búsqueda en cada una de las celdas de la misma. En particular se usó
+\emph{hill climbing}\cite{aiama}\footnote{o búsqueda local, intenta en
+  cada paso mejorar la solución obtenida, considerando una frontera de
+  vecinos.}
 
-Nuestra aproximación al problema, fue el de hacer una grilla, donde se
-generan particiones del plano vecinos-componentes de forma
-regular. Luego usar heurísticas de búsqueda en cada una de las celdas
-de la misma. En particular se usó \emph{hill
-  climbing}\cite{aima}\footnote{o búsqueda local, intenta en cada paso
-  mejorar la solución obtenida, considerando una frontera de vecinos.}
-Definiendo un tamaño de grilla y un punto inicial en la misma, la
-heurística se mueve a pequeños intervalos -discretos- en las cercanías
-de la solución obtenida, hasta llegar a un máximo local que no puede
-ser mejorado. La definición de estos pequeños intervalos, está
-relacionada con el tamaño de cada celda por un lado y por otro de la
-cantidad de iteraciones que hará la búsqueda local hasta alcanzar un
-máximo. Esto último se debe a que los intervalos son discretos,
-entonces cuanto más grandes son menos soluciones estamos considerando
-y es más corto el camino hacía un máximo que no se pueda mejorar (lo
-que no significa que esa un máximo real).
+Antes de seguir comentaremos rápidamente en que consistió esta metodología
+
+\paragraph{Hillclimbing engrillado}
+
+Por cada grilla, la heurística se mueve a pequeños intervalos
+-discretos- en las cercanías de la solución obtenida, hasta llegar a
+un máximo local que no puede ser mejorado.  La figura
+\ref{fig:hill-choreado} muestra la idea de \emph{hillclimbing} en una
+búsqueda de una dimensión.
+ 
+La definición de estos pequeños intervalos, está relacionada con el
+tamaño de cada celda por un lado y por otro de la cantidad de
+iteraciones que hará la búsqueda local hasta alcanzar un máximo. 
+
+\begin{figure}[ht]
+  \begin{subfigure}{.5\textwidth}
+  \begin{center}
+    \includegraphics[width=1.0\textwidth]{./img/hillclimbing-choreado.png}
+  \end{center}
+  \caption{Búsqueda local o hillclimbing en un caso hipotético sobre
+    una dimensión. La heurística permite reducir el espacio de
+    búsqueda, pero puede caer en extremos locales sub óptimos.}
+  \label{fig:hill-choreado}
+  \end{subfigure}
+  \begin{subfigure}{.5\textwidth}
+    \begin{center}
+      \includegraphics[width=1.0\textwidth]{./img/hillclimbing-1.png}
+    \end{center}
+    \caption{Hill climbing engrillado. Perspectiva 1.}
+    \label{fig:hill-1}
+  \end{subfigure}
+  \begin{subfigure}{.5\textwidth}
+    \begin{center}
+      \includegraphics[width=1.0\textwidth]{./img/hillclimbing-2.png}
+    \end{center}
+    \caption{Hill climbing engrillado. Perspectiva 2.}
+    \label{fig:hill-2}
+  \end{subfigure}
+  \begin{subfigure}{0.5\textwidth}
+    \begin{center}
+      \includegraphics[width=1.0\textwidth]{./img/hillclimbing-3.png}
+    \end{center}
+    \caption{Hill climbing engrillado. Perspectiva 3.}
+    \label{fig:hill-3}
+  \end{subfigure}
+  \caption{De (b) a (d) se muestran distintas perspectivas de la
+    partición del espacio en 4 celdas de 100x10 (k x $\alpha$). En
+    distintos colores cada búsqueda local. Los triángulos que apuntan
+    hacía arriba indican de donde comienza la búsqueda. Los que
+    apuntan hacia abajo, el máximo valor encontrado. Estos últimos
+    suelen no ser el último valor de la búsqueda, porque para saber
+    que es un máximo el algoritmo tiene que ver todos los
+    vecinos. Esto explica que la linea que une el orden de visita, no
+    sea una curva ascendente monotónica si no un zig-zag de ascenso y
+    descenso.}
+\end{figure}
+
+Esto último se debe a que los intervalos son discretos, entonces
+cuanto más grandes son, menos soluciones estamos considerando y es más
+corto el camino hacía un máximo que no se pueda mejorar (lo que no
+significa que esa un máximo real).  En las figuras \ref{fig:hill-1}
+\ref{fig:hill-2} \ref{fig:hill-3} mostramos como se generan los
+heatmaps, tomando el mayor de los valores en cada celda.
 
 Esta metodología nos permite reducir mucho el espacio de búsqueda. Por
 poner un ejemplo de una grilla de 100x100, donde se efectúa una
@@ -81,31 +138,80 @@ $\frac{200}{100^2} = 0,002$ menor al de explorar toda la grilla y es
 sensiblemente mejor que simplemente tomar un punto arbitrario de la
 misma.
 
+\paragraph{Busqueda iterativa engrillada de escaladores:}
+
 Para la definición de los parámetros de la búsqueda local, tuvimos en
-cuenta las consideraciones anteriores y generamos dos grillas. Una de
-tamaño pequeño, donde las componentes principales se mueven entre 10 y
-90 mientras que los vecinos entre 100 y 1000 \ref{fig:param-small} y
-otra con una grilla de un orden de maginitud más grande
-\ref{fig:param-big} que sigue de donde dejó la anterior en los
-componentes principales, pero los incrementa a un ritmo mayor, pero
-mantiene las divisiones de los vecinos.
+cuenta las consideraciones anteriores y generamos varias
+grillas. Primero una de gran tamaño (componentes principales entre 100
+y 1000 con cantidad de vecinos de hasta 2000, guiandonos por el pico
+de la curva de la experimentación de kNN sin PCA) que nos permitiera
+analizar el relieve general y buscar mesetas sobre las cuales hacer
+distintos ``zooms'' con mayor granularidad enfocados en regiones
+específicas de interés, luego una más pequeña con valores chicos de
+alfa y k cercanos a una meseta en particular inspirados por las
+grillas anteriores.
 
-En ambos experimentos, la definición del tamaño de los pasos que hace
-la búsqueda local, tuvimos en cuenta la diferente relación de aspecto
-de las grillas. En el primer caso usamos un paso de 20 para los
-vecinos y de 2 para las componentes principales, que guarda la
-relación entre el tamaño de las aristas de cada celda. Para el segundo
-experimento usamos para ambas dimensiones un paso de 10, que guarda la
-relación cuadrada de la celda.
+En el panorama mascroscópico de la figura \ref{fig:pca-big} se puede
+notar una característica positiva respecto de nuestro método de
+experimentación: la imagen de la función a maximizar es muy suave, lo
+que es favorable para el hillclimbing frente a superficies más
+``cerruchadas'' y que nos permite tener más confianza en los máximos
+locales obtenidos como posibles máximos globales de cada celda (lo que
+significa necesitar menos iteraciones de ``zooms'' para análisis
+exhaustivos). Otra particularidad interesante es que la función se
+comporta muy parecido al caso que vimos optimizando sin PCA: alcanza
+buenos valores con pocos ($<150$) vecinos, luego empeora y cerca de
+los 2000 vecinos se vuelve a comportar de manera precisa. Si bien
+analizaremos con más detalle ambas mesetas, asumiendo que la suavidad
+de la función nos indica que los máximos encontrados son esos y que
+ninguna supera a la otra, decidimos descartar aquellas combinaciones
+con valores grandes de k o alfa (en el caso de que no haya picos
+dominantes en tal región) por cuestiones de tiempo de cómputos dado
+que, sobre esa misma frontera de nuestra región total, se vuelven muy
+poco prácticas tales latencias.
 
-En lafiguras \ref{fig:param-small} se ve una buena zona para elegir parámetros en toda la franja 70-90 con algunos picos con pocos vecinos (200) rodeados de algunos valles, mientras que al aumentar los vecinos (800) parecíera tener menos picos pero una mejor base.
+En el zoom de la región de parámetros grandes visto en la figura
+\ref{fig:pca-z1} se valida nuestra suposición de que la suavidad de la
+imagen de la función objetivo implicaría buena representatividad de
+los máximos locales hallados con granularidades más altas: muy pocas
+celdas superan el $0.66$ de accuracy score correspondiente a las
+respectivas zonas del muestreo panorámico anterior. Si la imagen de la
+función diera saltos crecerían nuestras chances de encontrar picos
+puntuales en análisis más microscópicos. Como dijimos, esto nos
+permite descartar la región en favor de valores más pequeños con menos
+latencia asociada y misma precisión.
 
-Vemos en la figura \ref{fig:param-big} que se conecta adecuadamente,
-la primera fila, con la última del gráfico anterior; sugiriendo cierta
-suavidad en los superficie i.e en la relación de los parámetros con la
-precisión. El descenso más abrupto entre 500 y 600 para PCA que el
-gráfico anterior se debe al cambio de escala. El descenso de la
-precisión se puede deber a que la franja 60-600 presenta las componentes con mayor peso y todo lo que se agregue luego es ruido.
+En la figura \ref{fig:pca-z2} el zoom de la región de parámetros
+pequeños nos muestra que los valores cercanos al 0.68 de la función
+objetivo están pegados a la frontera contraria del zoom anterior: son
+valores mucho más chicos de lo que esperábamos dado nuestro rango
+original. Si bien esto significaría buenos resultados con poco costo
+de performance, como ya analizamos, valores pequeños de estos
+parámetros podrían significar menor tolerancia a ruidos muestrales
+(por ejemplo mayor variación entre predicciones de distintos
+datasets)\footnote{Situación que pudimos comprobar al pasar del set de
+  testing de 6000 casos de imdb\_small al set de 100 de test\_sample
+  de la cátedra, donde el comportamiendo se volvía más errático
+  seguramente por cuestiones de tamaño muestral.}.
+
+Habiendo visto que valores particularmente grandes de nuestros
+parámetros no mejoraban la función objetivo tanto como esperábamos y
+que el rango macroscópico original que planteamos no parecía del todo
+concluso decidimos extender el espacio de búsqueda buscando valores
+aún más pequeños con los resultados vistos en la figura
+\ref{fig:pca-small} donde la franja 40-52 para k y 150-350 para alfa
+supera los demás resultados vistos anteriormente.
+
+De este modo no pudimos superar en una primera iteración de grillas y
+parámetros iniciales los resultados de kNN sin PCA agregando tal
+método. Esto no significa que tras ajustes en otros parámetros que
+afectan al método (como aquellos de la vectorización o el dataset de
+entrenamiento mismo) no podamos reiterar las experimentaciones
+mejorando los resultados y progresando sobre estos, además de que la
+cualidad de seleccionar componentes con mucha cohesión interna
+respecto de la vectorización original es muy útil para eliminar ruidos
+muestrales significando mayor estabilidad a cambios en datasets de
+entrenamiento y testeo que sin PCA.
 
 Cabe destacar que según se acostumbra en procesamiento de
 lenguaje\cite{LP} natural\footnote{In general (Gale and Church, 1990)
@@ -122,29 +228,42 @@ los 300\footnote{El valor no es exacto porque depende de como se
 principales, que mencionamos antes.
 
 \begin{figure}[h]
-  \includegraphics[width=\textwidth]{./img/parameters-search-small.png}
+  \includegraphics[width=1.05\textwidth]{./img/pca_big_grid.png}
   \centering
   \caption{Resultado de la busqueda local sobre cada región
-    \textbf{pequeña} de k100x$\alpha$10. Usando la implementación de
-    sklearn. En cada una de las celdas, se corrió una búsqueda local,
-    comenzando en el valor mostrado en los ejes hasta alcanzar un
-    máximo local. El promedio de corridas es aproximadamente de 8,
-    versus una cantidad de puntos de \textbf{1000}. Se muestran sobre
-    el color, el accuracy logrado por el máximo local.}
-  \label{fig:param-small}
+    \textbf{grande} de k100x$\alpha$100. En cada una de las celdas se corrió una búsqueda local con ``steps" de 10 unidades sobre ambos parámetros comenzando en el valor mostrado en los ejes hasta alcanzar un
+    máximo local. Se muestran sobre el color, el accuracy logrado por el máximo local.}
+  \label{fig:pca-big}
+\end{figure}
+
+
+\begin{figure}[h]
+    \includegraphics[width=0.7\textwidth]{./img/pca_zoom1_grid.png}
+    \centering
+    \caption{Resultado de la busqueda local sobre cada región de k20x$\alpha$25 del \textbf{zoom sobre la meseta de valores altos de cantidad de vecinos}. En cada una de las celdas se corrió
+    una búsqueda local con ``steps" de 5 unidades para ambos parámetros comenzando en el valor mostrado en los ejes
+    hasta alcanzar un \textbf{máximo local}. Se muestran sobre el color, el accuracy logrado
+    por el máximo local.}
+    \label{fig:pca-z1}
 \end{figure}
 
 \begin{figure}[h]
-  \includegraphics[width=\textwidth]{./img/parameters-search-big.png}
-  \centering
-  \caption{Resultado de la busqueda local sobre cada región
-    \textbf{grande} de k100x$\alpha$100. Usando la
-    implementación de sklearn. En cada una de las celdas, se corrió
-    una búsqueda local, comenzando en el valor mostrado en los ejes
-    hasta alcanzar un \textbf{máximo local}. El promedio de corridas
-    es aproximadamente de 12, versus una cantidad de puntos de
-    \textbf{10000}. Se muestran sobre el color, el accuracy logrado
+    \includegraphics[width=0.8\textwidth]{./img/pca_zoom2_grid.png}
+    \centering
+    \caption{Resultado de la busqueda local sobre cada región de k20x$\alpha$100 del \textbf{zoom sobre la meseta de valores chicos de cantidad de vecinos} . En cada una de las celdas, se corrió
+    una búsqueda local con ``steps" de 10 para la cantidad de vecinos y 50 para la cantidad de componentes principales comenzando en el valor mostrado en los ejes
+    hasta alcanzar un \textbf{máximo local}. Se muestran sobre el color, el accuracy logrado
     por el máximo local.}
-    \label{fig:param-big}
+    \label{fig:pca-z2}
 \end{figure}
 
+\begin{figure}[h]
+  \includegraphics[width=0.5\textwidth]{./img/pca_big_ext.png}
+  \centering
+  \caption{Resultado de la busqueda local sobre cada región
+    \textbf{chica} de k12x$\alpha$50. En cada una de las celdas, se corrió
+    una búsqueda local con ``steps" de 6 para la cantidad de vecinos y 25 para la cantidad de componentes principales comenzando en el valor mostrado en los ejes
+    hasta alcanzar un \textbf{máximo local}. Se muestran sobre el color, el accuracy logrado
+    por el máximo local.}
+    \label{fig:pca-small}
+\end{figure}
