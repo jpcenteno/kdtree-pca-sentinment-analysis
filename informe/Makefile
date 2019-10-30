@@ -4,6 +4,6 @@ all: clean
 	pdflatex informe.tex
 
 clean:
-	rm informe.aux
-	rm informe.log
-	rm informe.pdf
+	-rm informe.aux
+	-rm informe.log
+	-rm informe.pdf
