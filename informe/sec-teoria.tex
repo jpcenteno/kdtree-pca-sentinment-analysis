@@ -69,7 +69,7 @@ Si del conjunto de vectores $\{v_1,..v_n \} \subset \mathds{R}^m$ que
 conseguimos mediante Bag of Words tomamos el vector de medias
 muestrales $\mu = \sum \frac{v_i}{n} \in \mathds{R}^n $ podemos
 conseguir la matriz $X \in \mathds{R}^{m\times n}$ con filas
-$\frac{v_i-\mu}{\sqrt{n-1}}$ podemos construir su \textit{matriz de
+$\frac{v_i-\mu}{\sqrt{n-1}}$ para entonces conseguir su \textit{matriz de
   covarianza} $M=\frac{X^t X}{n-1}$ de cuya descomposición SVD, como
 para toda matriz $X$ vale que $X^t X$ es simétrica con autovalores
 reales y base ortonormal de autovectores también reales, conseguimos
@@ -82,7 +82,7 @@ ruido entre componentes.
 Esto también nos permite recortar los últimos vectores de la base dado
 que son los que menos información proveen (además de ahorrar tiempo y
 espacio al considerar menos componentes espaciales en $kNN$), que
-llamermos una \textit{reducción de dimensionalidad} a $\alpha$
+llamaremos una \textit{reducción de dimensionalidad} a $\alpha$
 cantidad de vectores.
 
 \subsection{Método de la potencia}%
