@@ -6,6 +6,23 @@ Se realizaron mediciones sobre el \textit{accuracy} al variar los valores de
 \texttt{min\_df} y \texttt{max\_df} para la mejor configuración de parámetros
 conocida hasta el momento de realizar este experimento ($k=1800$, sin PCA).
 
+El hiperparámetro \texttt{max\_df} permite ignorar los términos que aparecen
+con mucha frecuencia en los documentos, del set de datos. Por ejemplo, un valor
+de $\mathtt{max\_df}=0.7$ indica al vectorizador que debe ignorar las palabras
+que aparecen en el $70\%$ o mas de las reseñas.
+% Motivacion
+Se espera que los términos de alta frecuencia sean inútiles para distinguir los
+documentos entre calificaciones positivas y negativas.
+%
+Por otro lado, el hiperparámetro \texttt{min\_df} indica al vectorizador que
+debe ignorar las palabras que se presentan en una porción baja de los
+documentos. Por ejemplo, un valor de $\mathtt{min\_df}=0.05$ configura al
+vectorizador para ignorar los términos que aparecen solamente en el $5\%$ o
+menos de los documentos.
+% Motivacion
+Se conoce poco sobre los términos de baja frecuencia, por lo que incluirlos
+puede provocar problemas de \textit{overfitting} en el modelo.
+
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{./img/exp_maxmindf.png}
 \centering
