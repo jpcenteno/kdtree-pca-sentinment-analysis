@@ -23,3 +23,9 @@ Para implementar PCA tuvimos que hacer nuestro propio método de la potencia con
 Todos estos métodos requieren parámetros que afectan fuertemente el resultado en
 términos de precisión final como de latencia. Nos interesa encontrar aquellos
 que minimicen sacrificios en tal \textit{tradeoff}.
+
+La experimentación extensa sobre $\alpha$ y \emph{k}, no arrojó tan
+buenos resultados como una adecuada vectorización del vocabulario. La
+elección del punto de corte en palabras de más y menos frecuencia tuvo
+tanto o más peso que la elección de la cantidad de vecinos y
+componenetes principales.
