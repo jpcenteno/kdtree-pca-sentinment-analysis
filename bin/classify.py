@@ -25,8 +25,8 @@ def get_instances(df, df_test):
     print("Cantidad de instancias de entrenamiento = {}".format(len(text_train)))
     print("Cantidad de instancias de test = {}".format(len(text_test)))
     vectorizer = CountVectorizer(
-        max_df=0.85, min_df=0.01,
-        max_features=5000, ngram_range=(1, 2),
+        max_df=0.30, min_df=0.001,
+        max_features=5000
     )
 
     vectorizer.fit(text_train)
@@ -51,6 +51,7 @@ if __name__ == '__main__':
     print("Vectorizando datos...")
     X_train, y_train, X_test, ids_test = get_instances(df, df_test)
     #Comentar esto si nuestra mejor configuración no usa PCA
+    """
     alpha = 100
     pca = PCA(alpha)
 
@@ -58,11 +59,11 @@ if __name__ == '__main__':
     pca.fit(X_train.toarray())
     X_train = pca.transform(X_train)
     X_test = pca.transform(X_test)
-
+    """
     """
     Entrenamos KNN
     """
-    clf = KNNClassifier(100)
+    clf = KNNClassifier(1826)
 
     clf.fit(X_train, y_train)
 
