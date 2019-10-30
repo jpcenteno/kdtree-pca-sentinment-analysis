@@ -1,10 +1,14 @@
 \section{Conclusiones}%
 
-Para el método de la potencia determinamos un criterio de corte buen rendimiento asociado a un $\epsilon$ que no costara mucho en términos de tiempo, sobre todo considerando que al aplicar deflación este método se llama continuamente.
+Para el método de la potencia determinamos un criterio de corte con buen rendimiento basado en diferencias residuales e incrementales con una tolerancia $\epsilon = 10^{-6}$ que no costara mucho en términos de tiempo, sobre todo considerando que al aplicar deflación este método se llama continuamente para usar PCA.
 
-De mismo modo usamos una estructura de datos alternativa para que $kNN$ fuera mas perfomante y optimizamos parámetros de $k$ y $\alpha$ para tal método y PCA.
+Analizamos la precisión respecto del tamaño del set de entrenamiento al que se somete kNN con PCA notando que progresan de manera proporcional.
 
-%no le ganó PCA a kNN
+Vimos que sobre el set de entrenamiento y testeo de imdb\_small provisto por la cátedra no fue posible conseguir accuracy scores por encima de $0.68$ para kNN en una sola iteración de optimización de parámetros independientemente del agregado de PCA. El $k$ que optimiza tal situación es $k=1826$ obteniendo accuracy $0.685$.
 
-Potencial trabajo futuro sería experimentar sobre las normas que se usan para buscar vecinos cercanos y modos de vectorización que optimicen la información contenida en los vectores. Los métodos de experimentación y desarrollo planteados son también la base sobre la cual se podría reiterar la optimización de parámetros de modo de conseguir progresivamente mejores resultados.
+La experimentación sobre PCA no fue enteramente inconclusiva: pudimos ver que la función objetivo en función de $k$ acompaña (con una dimensión más) a aquella de la experimentación de kNN sin PCA sugiriendo que las mejoras que se puedan hacer en términos de vectorización sobre una alternativa impactarían de manera similar en la otra.
+
+Los métodos de experimentación y desarrollo planteados son la base sobre la cual se podría reiterar la optimización de parámetros de modo de conseguir progresivamente mejores resultados.
+Potencial trabajo futuro sería experimentar sobre las normas que se usan para buscar vecinos cercanos y modos de vectorización que optimicen la información contenida en los vectores. Se podría extender el análisis de recorte según frecuencias de la vectorización a kNN con PCA (a pesar de que nuestro mejor kNN con PCA no resultó ser más preciso que nuestro mejor kNN sin PCA) para buscar mejoras también ahí.
+
 \label{sec:conclusiones}

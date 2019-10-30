@@ -6,7 +6,7 @@ Como en cada k-ésima iteración del método de la potencia estamos consiguiendo
     \item Criterio de diferencia de autovalores: cortar si $|| \hat{\lambda}^{(k)} - \hat{\lambda}^{(k-1)} || < \epsilon$
 \end{itemize}
 
-Como bajo ciertas condiciones (como $|\lambda_1| \approx |\lambda_i|$ para $\lambda_1$ autovalor dominante y $\lambda_i$ otro autovalor de la matriz $A$) el método de la potencia puede no converger, al margen de los criterios se corta la iteración tras una cantidad fija y lo suficientemente grande (de modo que si converge no interrumpa a los criterios anteriores) de veces. \\
+Como bajo ciertas condiciones (como $|\lambda_1| \approx |\lambda_i|$ para $\lambda_1$ autovalor dominante y $\lambda_i$ otro autovalor de la matriz $A$ u ortogonalidades entre el vector inicial escogido y el autovector asociado a $\lambda_1$) el método de la potencia puede no converger, al margen de los criterios se corta la iteración tras una cantidad fija y lo suficientemente grande (de modo que si converge no interrumpa a los criterios anteriores) de veces. \\
 
 En cuanto a precisión especulamos originalmente con que el mejor fuera el criterio de vector residual dado que mide qué tan bien aproximan $\hat{\lambda}^{(k)}$ y $v^{(k)}$ a un autovalor y autovector asociado, seguido del criterio de autovectores bajo la presunción de que funciona mejor al tener que aproximar varias componentes del autovector para terminar versus aproximar únicamente el autovalor. Bajo las mismas suposiciones especulamos livianamente que la precisión sería inversamente proporcional a la cantidad de iteraciones necesarias siendo el criterio de diferencia de autovalores el que antes se cumpliría, seguido del de autovectores y por último el de vector residual.
 
