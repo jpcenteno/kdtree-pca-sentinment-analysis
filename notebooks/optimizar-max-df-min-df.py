@@ -2,9 +2,7 @@
 
 '''
 La idea es mostrar para un par de valores `alpha`, `k`, como varía el
-_accuracy_ variando los hiperparametros `max_df`, `min_df`. La **hipotesis** es
-que no mejora el accuracy, pues PCA se encarga de eliminar la información
-innecesaria.
+_accuracy_ variando los hiperparametros `max_df`, `min_df`.
 '''
 
 import time
@@ -23,9 +21,9 @@ import sentiment
 # ----------------------------------------------------------------------------
 
 # Variar las combinaciones de hiperparametros acá:
-ALPHA = 150
-K = 140
-max_dfs = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+#  ALPHA = 150
+K = 1800
+max_dfs = [.1, .2, .3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 min_dfs = [0.001, 0.025, 0.05, 0.075, 0.1, 0.125, 0.15]
 
 # Configuración del logging
@@ -68,7 +66,7 @@ def read_data(path):
     text_data = text_train, label_train, text_test, label_test
     return text_data
 
-def vectorizer(text_data, max_df, min_df):
+def vectorizar(text_data, max_df, min_df):
     '''
     Vectorizador para los datos. En este script es importante.
     '''
@@ -99,19 +97,14 @@ def benchmark(text_data, max_df, min_df):
     time_begin = time.perf_counter()
 
     log.info('benchmark: (max_df, min_df) = (%.2f, %.2f)', max_df, min_df)
-    X_train, y_train, X_test, y_test = vectorizer(text_data, max_df, min_df)
-
-    log.debug(f'fit_transform de PCA.')
-    pca = sentiment.PCA(ALPHA, 1e-5)
-    X_train_pca = pca.fit_transform(X_train)
+    X_train, y_train, X_test, y_test = vectorizar(text_data, max_df, min_df)
 
     log.debug('Entrenando el clasificador KNN')
     knn_clf = sentiment.KNNClassifier(K)
-    knn_clf.fit(X_train_pca, y_train)
+    knn_clf.fit(X_train, y_train)
 
     log.debug('Clasificando...')
-    X_test_pca = pca.transform(X_test)
-    y_pred = knn_clf.predict(X_test_pca)
+    y_pred = knn_clf.predict(X_test)
 
     log.debug('Calculando accuracy...')
     acc = accuracy_score(y_pred, y_test)
@@ -137,6 +130,9 @@ if __name__ == '__main__':
         f.flush()
 
         for max_df, min_df in itertools.product(max_dfs, min_dfs):
+
+            if max_df <= min_df: continue
+
             acc, time_delta = benchmark(text_data, max_df, min_df)
             writer.writerow({'max_df': max_df,
                              'min_df': min_df,

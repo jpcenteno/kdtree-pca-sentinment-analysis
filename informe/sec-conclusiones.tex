@@ -10,7 +10,11 @@ La experimentación sobre PCA no fue enteramente inconclusiva: pudimos ver que l
 
 Vimos que finalmente el salto más notable en resultados no vino de los métodos de clasificación en sí sino de la vectorización.
 
+
 Los métodos de experimentación y desarrollo planteados son la base sobre la cual se podría reiterar la optimización de parámetros de modo de conseguir progresivamente mejores resultados.
 Potencial trabajo futuro sería experimentar sobre las normas que se usan para buscar vecinos cercanos y modos de vectorización que optimicen la información contenida en los vectores. Se podría extender el análisis de recorte según frecuencias de la vectorización a kNN con PCA (a pesar de que nuestro mejor kNN con PCA no resultó ser más preciso que nuestro mejor kNN sin PCA) para buscar mejoras también ahí.
 
+La opinión subyacente en los documentos queda caracterizada por las palabras
+que aparecen con menor frecuencia. Queda pendiente repetir la optimización de
+hiperparámetros para un valor de \texttt{max\_df} en el rango $\[0.2, 0.5]$.
 \label{sec:conclusiones}
