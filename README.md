@@ -1,6 +1,8 @@
-# KNN-Sentiment: TP2 de Métodos Numéricos
+# Sentiment Analysis with PCA and KDTree KNN
 
-## DEADLINE  Jueves 10 / 10
+This project implements a sentiment classifier using a custom C++ implementation of PCA and KNN. We wrote a KNN classifier adapting a KDTree implementation by Fabian Meyer. This implementation leverages OpenMP for parallel computation achieving a significant speedup in train/test iterations. Finally, we wrapped the C++ code into Python classes using PyBind.
+
+This project was made as part of the "Numerical Methods" course, taught during the Second semester of 2019 at the Faculty of Natural and Exact Sciences, University of Buenos Aires.
 
 ## Instrucciones
 
